@@ -206,29 +206,26 @@ parcel inputParcel()
 
 int getchoose()
 {
-    int choose;
+    char choose;
     printf("End or not? (y/n) ");
     scanf("%c", &choose);
-    getchar();
+    char ch = getchar();
     if ((choose == 'y') || (choose == 'Y'))
     {
-        choose = 0;
+        return 0;
     }
     else
     {
         if ((choose == 'n') || (choose == 'N'))
         {
-            choose = 1;
+            return 1;
         }
         else
         {
             printf("Check your input!\n");
+            return 0;
         }
-        
-        
     }
-
-    return choose;
 }
 
 void outputParcel(parcel *one)

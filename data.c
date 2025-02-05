@@ -303,6 +303,7 @@ void sort(char *key)
         {
             printf("Error key input! Input key again: ");
             scanf("%s", key);
+            code = getOpCode(key);
         } while (code == -1);
     }
 
@@ -581,7 +582,7 @@ void sortTo(node *list, int rule)
     }
 
     // TODO 释放链表
-    freeLinklist(list);
+    //freeLinklist(list);
 }
 
 void sortLoadTime(node *list, int rule)
@@ -637,7 +638,7 @@ void sortLoadTime(node *list, int rule)
     }
 
     // TODO 释放链表
-    freeLinklist(list);
+    //freeLinklist(list);
 }
 
 // void sortLoadTime(node *list, int rule)
@@ -745,9 +746,14 @@ void sortUnloadTime(node *list, int rule)
     // TODO 输出排序结果
     for (node *ptr = list; ptr != NULL; ptr = ptr->next)
     {
+        if (ptr->data.unload_time.year)
+        {
+            continue;
+        }
+        
         outputParcel(&(ptr->data));
     }
 
     // TODO 释放链表
-    freeLinklist(list);
+    //freeLinklist(list);
 }
