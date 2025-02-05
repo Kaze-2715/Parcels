@@ -268,6 +268,70 @@ void filter(char *key)
     freeLinklist(list);
 }
 
+void sort(char *key)
+{
+    //* 排序的关键字段有来，去，时间，状态（key）
+    //* 排序的规则有升序和降序
+    int rule = 0;
+    int code = -1;
+
+    printf("Input the rule of sorting, -1 is descending, 1 is ascending: ");
+    scanf("%d", &rule);
+    getchar();
+
+    if (!((rule == -1) || (rule == 1)))
+    {
+        do
+        {
+            printf("Error rule input! Input again: ");
+            scanf("%d", &rule);
+            getchar();
+        } while (!((rule == -1) || (rule == 1)));
+    }
+
+    // TODO 加载链表
+    FILE *parcelData = openParcel("r");
+    node *list = loadLinklist(parcelData);
+    fclose(parcelData);
+
+    // TODO 翻译字段为操作码，确定子函数
+    code = getOpCode(key);
+
+    if (code == -1)
+    {
+        do
+        {
+            printf("Error key input! Input key again: ");
+            scanf("%s", key);
+        } while (code == -1);
+    }
+
+    switch (code)
+    {
+    case 1:
+        sortFrom(list, rule);
+        break;
+
+    case 2:
+        sortTo(list, rule);
+        break;
+
+    case 5:
+        sortLoadTime(list, rule);
+        break;
+
+    case 6:
+        sortUnloadTime(list, rule);
+        break;
+
+    default:
+        break;
+    }
+
+    // TODO 卸载链表
+    freeLinklist(list);
+}
+
 // TODO 完成这两个时间比较函数，当条件为真时返回值应该是正数
 int timeLaterThan(time floor, time cur)
 {
@@ -425,72 +489,6 @@ int timeEarlierThan(time ceil, time cur)
     return 1;
 }
 
-void sort(char *key)
-{
-    //* 排序的关键字段有来，去，时间，状态（key）
-    //* 排序的规则有升序和降序
-    int rule = 0;
-    int code = -1;
-
-    printf("Input the rule of sorting, -1 is descending, 1 is ascending: ");
-    scanf("%d", &rule);
-    getchar();
-
-    if ((rule != -1) || (rule != 1))
-    {
-        do
-        {
-            printf("Error rule input! Input again: ");
-            scanf("%d", &rule);
-        } while ((rule != -1) || (rule != 1));
-        
-    }
-    
-
-    //TODO 加载链表
-    FILE *parcelData = openParcel("r");
-    node *list = loadLinklist(parcelData);
-    fclose(parcelData);
-
-    //TODO 翻译字段为操作码，确定子函数
-    code = getOpCode(key);
-
-    if (code == -1)
-    {
-        do
-        {
-            printf("Error key input! Input key again: ");
-            scanf("%s", key);
-        } while (code == -1);
-        
-    }
-
-    switch (code)
-    {
-    case 1:
-        sortFrom(list, rule);
-        break;
-    
-    case 2:
-        sortTo(list, rule);
-        break;
-
-    case 5:
-        sortLoadTime(list, rule);
-        break;
-
-    case 6:
-        sortUnloadTime(list, rule);
-        break;
-
-    default:
-        break;
-    }
-    
-    //TODO 卸载链表
-    freeLinklist(list);
-}
-
 int getOpCode(char *key)
 {
     int code = -1;
@@ -552,7 +550,7 @@ void sortFrom(node *list, int rule)
     }
 
     //TODO 释放链表
-    freeLinklist(list);
+    //freeLinklist(list);
 }
 
 void sortTo(node *list, int rule)

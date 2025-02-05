@@ -12,7 +12,7 @@ int matchedLine(node *buffer, char *ID);
 //! @attention Need the whole path to the file, which is not good for deploying in other computers.
 FILE *openParcel(char *mode)
 {
-    FILE *fp = fopen("E:/BaiduSyncdisk/03_CODE/VSCode_Workspace/parcel_service/parcels.txt", mode);
+    FILE *fp = fopen("E:/BaiduSyncdisk/03_CODE/VSCode_Workspace/Infomation_Manager/parcels.txt", mode);
     if (fp == NULL)
     {
         perror("Open parcel data");
@@ -22,15 +22,15 @@ FILE *openParcel(char *mode)
 
 //* @brief To open the "log.txt"
 //! @attention Same as above
-FILE *openLog(char *mode)
-{
-    FILE *fp = fopen("E:/BaiduSyncdisk/03_CODE/VSCode_Workspace/parcel_service/log.txt", mode);
-    if (fp == NULL)
-    {
-        perror("Open log data");
-    }
-    return fp;
-}
+// FILE *openLog(char *mode)
+// {
+//     FILE *fp = fopen("E:/BaiduSyncdisk/03_CODE/VSCode_Workspace/parcel_service/log.txt", mode);
+//     if (fp == NULL)
+//     {
+//         perror("Open log data");
+//     }
+//     return fp;
+// }
 
 //* @author Kaze
 //* @brief To read a line from a given txt file(FILE *fp), then return a struct variable of parcel's data.
