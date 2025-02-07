@@ -38,6 +38,12 @@ void userLogin(user *user)
 
 void userLogout(user *user)
 {
+    if (!LOGGED)
+    {
+        puts("You have not logged in!");
+        return;
+    }
+    
     LOGGED = 0;
     ACCESSIBLE = 0;
     puts("Logged out. Bye.");
@@ -50,7 +56,7 @@ static int matched(user *inputUser)
     FILE *userData = fopen("E:/BaiduSyncdisk/03_CODE/VSCode_Workspace/Infomation_Manager/userdata.txt", "r");
     char buffer[40] = {0};
     user readUser;
-    while (fgets(buffer, 40, userData) != EOF)
+    while (fgets(buffer, 40, userData) != NULL)
     {
         sscanf(buffer, "%s %s %d\n", readUser.username, readUser.password, &readUser.rooted);
         if (!strcmp(readUser.username, inputUser->username) && !strcmp(readUser.password, inputUser->password))
@@ -64,31 +70,48 @@ static int matched(user *inputUser)
     return matched;
 }
 
-int createUser(user *user)
+void createUser(user *user)
 {
+    int accessibility;
+
+    if (!LOGGED)
+    {
+        puts("You have not logged in!");
+        return;
+    }
+    if (!ACCESSIBLE)
+    {
+        puts("You are not authorized!");
+        return;
+    }
+    
     if (matched(user))
     {
         puts("User exists. Please log in");
-        return 0;
+        return;
     }
+
+    printf("Is it authorized? (0 for no, 1 for yes): ");
+    scanf("%d", &accessibility);
+    getchar();
     FILE *userData = fopen("E:/BaiduSyncdisk/03_CODE/VSCode_Workspace/Infomation_Manager/userdata.txt", "a");
-    fprintf(userData, "%s %s %d\n", user->username, user->password, user->rooted);
+    fprintf(userData, "%s %s %d\n", user->username, user->password, accessibility);
     fclose(userData);
-    return 1;
+    return;
 }
 
-int deleteUser(user *User)
+void deleteUser(user *User)
 {
     if (!matched(User))
     {
         puts("User does not exists. Check your input.");
-        return 1;
+        return;
     }
     
     FILE *userData = fopen("E:/BaiduSyncdisk/03_CODE/VSCode_Workspace/Infomation_Manager/userdata.txt", "r");
     char ch;
     int userCount = 0;
-    while (ch = fgetc(userData) != EOF)
+    while ((ch = fgetc(userData)) != EOF)
     {
         if (ch == '\n')
         {
@@ -99,12 +122,13 @@ int deleteUser(user *User)
     user *users = malloc(userCount * sizeof(user));
     char buffer[100];
     user readUser;
+    rewind(userData);
     for (int i = 0; i < userCount; i++)
     {
         fscanf(userData, "%s %s %d\n", users[i].username, users[i].password, &users[i].rooted);
         if (!strcmp(users[i].username, User->username))
         {
-            User->username[0] = '\0';
+            users[i].username[0] = '\0';
         }
         
     }
@@ -118,10 +142,10 @@ int deleteUser(user *User)
         }
         fprintf(userData, "%s %s %d\n", users[i].username, users[i].password, users[i].rooted);
     }
-    return 0;
+    return;
 }
 
-int updateUser(user *inputUser)
+void updateUser(user *inputUser)
 {
     char ch;
     int userCount = 0;
@@ -136,25 +160,27 @@ int updateUser(user *inputUser)
     if (!matched(inputUser))
     {
         puts("User does not exists. Check your input.");
-        return 1;
+        return;
     }
 
     FILE *userData = fopen("E:/BaiduSyncdisk/03_CODE/VSCode_Workspace/Infomation_Manager/userdata.txt", "r");
     
-    while (ch = fgetc(userData) != EOF)
+    while ((ch = fgetc(userData)) != EOF)
     {
         if (ch == '\n')
         {
             userCount++;
         }
     }
-
+    rewind(userData);
     user *users = malloc(userCount * sizeof(user));
     for (int i = 0; i < userCount; i++)
     {
         fscanf(userData, "%s %s %d\n", users[i].username, users[i].password, &users[i].rooted);
     }
     fclose(userData);
+
+    userData = fopen("E:/BaiduSyncdisk/03_CODE/VSCode_Workspace/Infomation_Manager/userdata.txt", "w");
     //* 先不做这个权限的更改了，目前来看权限是创建用户的时候就定好的
     // puts("Enter the key you want to update: (password or root)");
     // sgets(buffer, 10);
@@ -201,7 +227,7 @@ int updateUser(user *inputUser)
             {
                 printf("Enter new password again: ");
                 sgets(newPassword, 20);
-            } while (strcmp(password, inputUser->password));
+            } while (strcmp(password, newPassword));
 
             strcpy(users[i].password, password);
             puts("Change applied.");
@@ -210,7 +236,7 @@ int updateUser(user *inputUser)
     }
     
     fclose(userData);
-    return 0;
+    return;
 }
 
 static char *sgets(char *buffer, int size)

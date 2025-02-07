@@ -24,16 +24,16 @@ void userLogout(user *logout);
 user getUser();
 
 // TODO create
-int createUser(user *user);
+void createUser(user *user);
 
 // TODO delete
-int deleteUser(user *user);
+void deleteUser(user *user);
 #endif
 
 // TODO matchUser
 static int matched(user *user);
 
 // TODO updateUser
-int updateUser(user *user);
+void updateUser(user *user);
 
 static char *sgets(char *buffer, int size);
