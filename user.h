@@ -33,6 +33,8 @@ void deleteUser(user *user);
 // TODO matchUser
 static int matched(user *user);
 
+static int matchedName(user *inputUser);
+
 // TODO updateUser
 void updateUser(user *user);
 

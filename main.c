@@ -1,11 +1,12 @@
 #include "defines.h"
 #include "declarations.h"
+#include "user.h"
 #include <stdio.h>
 
 int LOGGED = 0;
 int ACCESSIBLE = 0;
 int Start = 0;
-
+user currentUser;
 
 // ----------------------------------------
 // @author Kaze
@@ -13,7 +14,7 @@ int Start = 0;
 // @brief The main part of the program.
 // ----------------------------------------
 int main(void)
-{ 
+{
     printf("Glad to see you! How's your day?\n\n");
     printf("If needed, please enter '-help' for further instructions.\n");
     printf("Don't forget to login first.\n");
@@ -21,8 +22,8 @@ int main(void)
     while(1)
     {
         int code = -1;          //* The command code
-        // int needPermission = 1; //* To identify whether it needs permission.
-        // int need2start = 0;     //* To identify whether it needs start the system.
+        int needPermission = 1; //* To identify whether it needs permission.
+        int need2start = 0;     //* To identify whether it needs start the system.
 
         code = getCommand();  
 
@@ -31,30 +32,30 @@ int main(void)
         //     printf("Command error: No such command.\n");
         //     continue;
         // }
-        // if (code <= 10)   //* To check whether the command needs a permission.
-        // {
-        //     needPermission = 0;
-        // }
-        // if ((code >= 4) && (code <= 14)) //* To check whether the command need to start the data system.
-        // {
-        //     need2start = 1;
-        // }
+        if (code <= 10)   //* To check whether the command needs a permission.
+        {
+            needPermission = 0;
+        }
+        if ((code >= 4) && (code <= 14)) //* To check whether the command need to start the data system.
+        {
+            need2start = 1;
+        }
         
-        // if ((!LOGGED) && needPermission) //* To check whether the user logged in his account.
-        // {
-        //     printf("Please login first!\n");
-        //     continue;
-        // }
-        // if ((!ACCESSIBLE) && needPermission) //* To check whether the user has the permission to access.
-        // {
-        //     printf("You are not accessible! Please acquire permissions.\n");
-        //     continue;
-        // }
-        // if ((!Start) && need2start) //* To check whether the system has been started.
-        // {
-        //     printf("Please start the system first!\n");
-        //     continue;
-        // }
+        if ((!LOGGED) && needPermission) //* To check whether the user logged in his account.
+        {
+            printf("Please login first!\n");
+            continue;
+        }
+        if ((!ACCESSIBLE) && needPermission) //* To check whether the user has the permission to access.
+        {
+            printf("You are not accessible! Please acquire permissions.\n");
+            continue;
+        }
+        if ((!Start) && need2start) //* To check whether the system has been started.
+        {
+            printf("Please start the system first!\n");
+            continue;
+        }
 
         switch (code)
         {
@@ -173,16 +174,15 @@ void start()
 
 void login()
 {
-    printf("Logged in\n\n\n");
-    LOGGED = 1;
-    ACCESSIBLE = 1;
+    currentUser = getUser();
+    currentUser.login(&currentUser);
+    return;
 }
 
 void logout()
 {
-    printf("Logged out\n\n\n");
-    LOGGED = 0;
-    ACCESSIBLE = 0;
+    currentUser.logout(&currentUser);
+    return;
 }
 
 void stop()
@@ -305,21 +305,63 @@ void select()
 
 void userCreate()
 {
+    // TODO 判断权限
+    if (!LOGGED)
+    {
+        puts("Please login first!\n\n");
+        return;
+    }
+    if (!ACCESSIBLE)
+    {
+        puts("You are not authorized.\n\n");
+        return;
+    }
+    
     // TODO 获取用户输入，存储为一个变量
+    user newUser = getUser();
 
     // TODO 将这个变量写入user.txt
-    printf("Created\n\n\n");
+    createUser(&newUser);
+    return;
 }
 
 void userDelete()
 {
+    // TODO 判断权限
+    if (!LOGGED)
+    {
+        puts("Please login first!\n\n");
+        return;
+    }
+    if (!ACCESSIBLE)
+    {
+        puts("You are not authorized.\n\n");
+        return;
+    }
+
     // TODO 获取用户输入，存储为一个变量
+    user toBeDeleted = getUser();
 
     // TODO 这个使用计算行数来完成，先计算总行数，在逐行读入解析，将匹配的行标记，然后将字符数组重新写入
-    printf("Deleted\n\n\n");
+    deleteUser(&toBeDeleted);
+    return;
 }
 
 void userUpdate()
 {
-    printf("Updated\n\n\n");
+    // TODO 判断权限
+    if (!LOGGED)
+    {
+        puts("Please login first!\n\n");
+        return;
+    }
+    if (!ACCESSIBLE)
+    {
+        puts("You are not authorized.\n\n");
+        return;
+    }
+    
+    user toBeUpdated = getUser();
+    updateUser(&toBeUpdated);
+    return; 
 }

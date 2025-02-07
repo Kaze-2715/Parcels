@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+//! 详见matchedName()的优化，getuser()也适用这个优化方法
 user getUser()
 {
     user inputUser;
@@ -85,7 +86,7 @@ void createUser(user *user)
         return;
     }
     
-    if (matched(user))
+    if (matchedName(user))
     {
         puts("User exists. Please log in");
         return;
@@ -97,12 +98,13 @@ void createUser(user *user)
     FILE *userData = fopen("E:/BaiduSyncdisk/03_CODE/VSCode_Workspace/Infomation_Manager/userdata.txt", "a");
     fprintf(userData, "%s %s %d\n", user->username, user->password, accessibility);
     fclose(userData);
+    printf("Created\n\n\n");
     return;
 }
 
 void deleteUser(user *User)
 {
-    if (!matched(User))
+    if (!matchedName(User))
     {
         puts("User does not exists. Check your input.");
         return;
@@ -142,6 +144,7 @@ void deleteUser(user *User)
         }
         fprintf(userData, "%s %s %d\n", users[i].username, users[i].password, users[i].rooted);
     }
+    printf("Deleted\n\n\n");
     return;
 }
 
@@ -234,7 +237,7 @@ void updateUser(user *inputUser)
         }
         fprintf(userData, "%s %s %d\n", users[i].username, users[i].password, users[i].rooted);
     }
-    
+    printf("Updated\n\n\n");
     fclose(userData);
     return;
 }
@@ -279,4 +282,24 @@ static char *sgets(char *buffer, int size)
     }
 
     return buffer;
+}
+
+//! matchedName()与matched()这两个函数仅相差判断条件，可以尝试用宏定义的方法将它们合并简化，附加条件来调用代码，写这个代码是因为有的操作需要匹配用户，而有的操作需要只匹配用户名
+int matchedName(user *inputUser)
+{
+    int matched = 0;
+    FILE *userData = fopen("E:/BaiduSyncdisk/03_CODE/VSCode_Workspace/Infomation_Manager/userdata.txt", "r");
+    char buffer[40] = {0};
+    user readUser;
+    while (fgets(buffer, 40, userData) != NULL)
+    {
+        sscanf(buffer, "%s %s %d\n", readUser.username, readUser.password, &readUser.rooted);
+        if (!strcmp(readUser.username, inputUser->username)/* && !strcmp(readUser.password, inputUser->password)*/)
+        {
+            inputUser->rooted = readUser.rooted;
+            matched = 1;
+        }
+        }
+    fclose(userData);
+    return matched;
 }
