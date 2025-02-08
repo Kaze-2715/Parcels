@@ -1,30 +1,7 @@
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include "defines.h"
-
-typedef enum Command
-{
-    HELP = 0,
-    START,
-    LOGIN,
-    LOGOUT,
-    STOP,
-    RELOAD,
-    SAVE,
-    HALT,
-    DATA_FILTER,
-    DATA_SORT,
-    DATA_VISUALIZATION, //* If the code is less than 10, it will need permission.
-    ADD,
-    DELETE,
-    UPDATE,
-    SELECT,   //* If the code is between 4 and 14, it will need to start the system.
-    USER_CREATE,
-    USER_DELETE,
-    USER_UPDATE,
-    LOCK_ACCOUNT,
-    UNLOCK_ACCOUNT,
-} cmd;
 
 int cmd2code(char command[]);
 // -----------------------------------------------
@@ -55,9 +32,14 @@ int cmd2code(char command[])
         cmd_code = HELP;
         return cmd_code;
     }
-    if (!strcasecmp(command, "-add\n"))
+    if (!strcasecmp(command, "-inbound\n"))
     {
-        cmd_code = ADD;
+        cmd_code = IN;
+        return cmd_code;
+    }
+    if (!strcasecmp(command, "-outbound\n"))
+    {
+        cmd_code = OUT;
         return cmd_code;
     }
     if (!strcasecmp(command, "-delete\n"))
@@ -154,6 +136,43 @@ int cmd2code(char command[])
     return cmd_code;
 }
 
+parcel inbound()
+{
+    parcel one;
+    time_t now;
+    struct tm *currentTime;
+
+    printf("Input the parcel infomation below\nFrom: ");
+    scanf("%9s", one.from);
+    getchar();
+    printf("To: ");
+    scanf("%9s", one.to);
+    getchar();
+    printf("ID: ");
+    scanf("%19s", one.ID);
+    getchar();
+
+    now = time(NULL);
+    currentTime = localtime(&now);
+    one.load_time.year = currentTime->tm_year + 1900;
+    one.load_time.month = currentTime->tm_mon;
+    one.load_time.day = currentTime->tm_mday;
+    one.load_time.hour = currentTime->tm_hour;
+    one.load_time.minute = currentTime->tm_min;
+    one.load_time.second = currentTime->tm_sec;
+
+    one.unload_time.year = 0;
+    one.unload_time.month = 0;
+    one.unload_time.day = 0;
+    one.unload_time.hour = 0;
+    one.unload_time.minute = 0;
+    one.unload_time.second = 0;
+
+    one.state = INBOUND;
+
+    return one;
+}
+
 parcel inputParcel()
 {
     parcel one;
@@ -204,7 +223,7 @@ parcel inputParcel()
     return one;
 }
 
-int getchoose()
+int chooseToContinue()
 {
     char choose;
     printf("End or not? (y/n) ");

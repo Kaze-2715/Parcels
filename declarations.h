@@ -17,23 +17,26 @@ node *loadLinklist(FILE *fp);
 //* user_io.c
 int cmd2code(char command[]);
 int getCommand();
-int getchoose();
+int chooseToContinue();
 void outputParcel(parcel *one);
+void outbound(char *ID);
 parcel inputParcel();
+parcel inbound();
 
 //* main.c
 int help();
 void start();
 void login();
 void logout();
-void stop();
-void reload();
-void save();
+// void stop();
+// void reload();
+// void save();
 void halt();
 void dataFilter();
 void dataSort();
 void dataVisual();
-void add();
+void inBound();
+void outBound();
 void delete();
 void update();
 void select();

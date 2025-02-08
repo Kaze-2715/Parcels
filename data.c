@@ -8,8 +8,8 @@
 
 extern log logger;
 
-static int timeLaterThan(time floor, time cur);
-static int timeEarlierThan(time ceil, time cur);
+static int timeLaterThan(Time floor, Time cur);
+static int timeEarlierThan(Time ceil, Time cur);
 static int getOpCode(char *key);
 void sortFrom(node *list, int rule);
 void sortTo(node *list, int rule);
@@ -48,8 +48,8 @@ void filter(char *key)
     int matchCount = 0;
     int criteria = 0;
     int mode = 0;
-    time floor;
-    time ceil;
+    Time floor;
+    Time ceil;
 
     criteria = getOpCode(key);
 
@@ -396,7 +396,7 @@ void sort(char *key)
 }
 
 // TODO 完成这两个时间比较函数，当条件为真时返回值应该是正数
-int timeLaterThan(time floor, time cur)
+int timeLaterThan(Time floor, Time cur)
 {
     if (cur.year > floor.year)
     {
@@ -474,7 +474,7 @@ int timeLaterThan(time floor, time cur)
     return 1;
 }
 
-int timeEarlierThan(time ceil, time cur)
+int timeEarlierThan(Time ceil, Time cur)
 {
     if (cur.year < ceil.year)
     {
@@ -701,62 +701,6 @@ void sortLoadTime(node *list, int rule)
     // TODO 释放链表
     // freeLinklist(list);
 }
-
-// void sortLoadTime(node *list, int rule)
-// {
-//     // TODO 使用选择排序来实现排序
-//     //*外层循环实现遍历所有链表节点
-//     //*内层循环实现进行所有比较
-//     //*需要的指针变量：1.标识当前确定的位 2.标识选择的位
-//     switch (rule)
-//     {
-//     case 1:
-//         for (node *cur = list; cur->next != NULL; cur = cur->next)
-//         {
-//             node *min = cur->next;
-//             for (node *select = cur->next; select != NULL; select = select->next)
-//             {
-//                 if (timeEarlierThan(min->data.load_time, select->data.load_time))
-//                 {
-//                     min = select;
-//                 }
-//             }
-//             parcel tmp = cur->data;
-//             cur->data = min->data;
-//             min->data = tmp;
-//         }
-//         break;
-
-//     case -1:
-//         for (node *cur = list; cur->next != NULL; cur = cur->next)
-//         {
-//             node *max = cur->next;
-//             for (node *select = cur->next; select != NULL; select = select->next)
-//             {
-//                 if (timeLaterThan(max->data.load_time, select->data.load_time))
-//                 {
-//                     max = select;
-//                 }
-//             }
-//             parcel tmp = cur->data;
-//             cur->data = max->data;
-//             max->data = tmp;
-//         }
-//         break;
-
-//     default:
-//         break;
-//     }
-
-//     // TODO 输出排序结果
-//     for (node *ptr = list; ptr != NULL; ptr = ptr->next)
-//     {
-//         outputParcel(&(ptr->data));
-//     }
-
-//     // TODO 释放链表
-//     freeLinklist(list);
-// }
 
 void sortUnloadTime(node *list, int rule)
 {

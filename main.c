@@ -53,77 +53,81 @@ int main(void)
 
         switch (code)
         {
-        case 0:
+        case HELP:
             help();
             break;
 
-        case 1:
+        case START:
             start();
             break;
 
-        case 2:
+        case LOGIN:
             login();
             break;
 
-        case 3:
+        case LOGOUT:
             logout();
             break;
 
-        case 4:
-            stop();
-            break;
-            return 0;
+        // case STOP:
+        //     stop();
+        //     break;
+        //     return 0;
+        //
+        // case 5:
+        //     reload();
+        //     break;
+        //
+        // case 6:
+        //     save();
+        //     break;
 
-        case 5:
-            reload();
-            break;
-
-        case 6:
-            save();
-            break;
-
-        case 7:
+        case HALT:
             halt();
             return 0;
             break;
 
-        case 8:
+        case DATA_FILTER:
             dataFilter();
             break;
 
-        case 9:
+        case DATA_SORT:
             dataSort();
             break;
             
-        case 10:
-            dataVisual();
+        // case DATA_VISUALIZATION:
+        //     dataVisual();
+        //     break;
+
+        case IN:
+            inBound();
             break;
 
-        case 11:
-            add();
+        case OUT:
+            outBound();
             break;
 
-        case 12:
+        case DELETE:
             delete();
             break;
 
-        case 13:
+        case UPDATE:
             update();
             break;
 
-        case 14:
+        case SELECT:
             select();
             break;
 
-        case 15:
+        case USER_CREATE:
             userCreate();
             break;
 
-        case 16:
+        case USER_DELETE:
             userDelete();
             break;
 
-        case 17:
+        case USER_UPDATE:
             userUpdate();
             break;
         default:
@@ -146,7 +150,8 @@ int help()
     printf("-reload      : Reload the data file to the program.\n");
     printf("-save        : Save the current data to the database file.\n");
     printf("-halt        : Exit the program without any saving operations.\n");
-    printf("-add         : Add a parcel to the warehouse.\n");
+    printf("-inBound     : Add a parcel to the warehouse.\n");
+    printf("-outBound    : Outbound a parcel from the warehouse.\n");
     printf("-delete      : Delete a parcel from warehouse(completely delete!).\n");
     printf("-update      : Update the state of a parcel.\n");
     printf("-select      : Select a specific parcel to read its information.\n");
@@ -186,25 +191,26 @@ void logout()
     return;
 }
 
-void stop()
-{
-    printf("Stopped\n\n");
-    return;
-}
+// void stop()
+// {
+//     printf("Stopped\n\n");
+//     return;
+// }
 
-void reload()
-{
-    printf("Reloaded\n\n");
-}
+// void reload()
+// {
+//     printf("Reloaded\n\n");
+// }
 
-void save()
-{
-    printf("Saved\n\n");
-}
+// void save()
+// {
+//     printf("Saved\n\n");
+// }
 
 void halt()
 {
     logger.print(INFO, "stopped the system");
+    logger.destroy();
     printf("Halted\n\n");
 }
 
@@ -221,7 +227,7 @@ void dataFilter()
         // TODO 设计一个函数，来匹配对应的字段的值，并输出结果，它的参数应该包含两部分：要匹配的字段，以及要匹配的值，以及可能的升序和降序排列
         filter(key);
 
-    } while (getchoose());
+    } while (chooseToContinue());
     
     //printf("Filtered\n\n");
 }
@@ -238,7 +244,7 @@ void dataSort()
         // TODO 排序函数，参数应该包含两部分：字段，升序/降序
         sort(key);
 
-    } while (getchoose());
+    } while (chooseToContinue());
 }
 
 void dataVisual()
@@ -247,20 +253,35 @@ void dataVisual()
 }
 
 //* @brief Continuously doing get info and wrtie a line until the user decided to stop it.
-void add()
+void inBound()
 {
     parcel one;
     FILE *parcelData = openParcel("a+");
 
     do
     {
-        one = inputParcel();
+        one = inbound();
         writeLine(&one, parcelData);
-        logger.print(INFO, "added a parcel: %s", one.ID);
+        logger.print(INFO, "inbounded a parcel: %s", one.ID);
         printf("Add complete\n\n");
-    } while (getchoose());
+    } while (chooseToContinue());
 
     fclose(parcelData);
+}
+
+void outBound()
+{
+    do
+    {
+        char ID[20] = {0};
+        printf("The parcel ID to be outbounded: ");
+        scanf("%s", ID);
+        getchar();
+
+        outbound(ID);
+        logger.print(INFO, "outbounded a parcel: %s", ID);
+    } while (chooseToContinue());
+    
 }
 
 //* @brief Continuously doing get ID and delete the line until the user dicided to stop it.
@@ -276,7 +297,7 @@ void delete()
         deleteLine(ID);
         logger.print(INFO, "deleted a parcel: %s", ID);
         printf("Delete complete\n\n");
-    } while (getchoose());
+    } while (chooseToContinue());
 }
 
 //* @brief Continously doing getting ID and update the line until user's stop.
@@ -291,7 +312,7 @@ void update()
         updateLine(ID);
         logger.print(INFO, "updated a parcel: %s", ID);
         printf("Update complete\n\n");
-    } while (getchoose());
+    } while (chooseToContinue());
 }
 //* @brief Same as above, but select a line.
 void select()
@@ -304,7 +325,7 @@ void select()
         getchar();
         selectLine(ID);
         logger.print(INFO, "selected a parcel: %s", ID);
-    } while (getchoose());
+    } while (chooseToContinue());
 }
 
 void userCreate()

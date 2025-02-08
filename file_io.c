@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 node *loadLinklist(FILE *fp);
 void freeLinklist(node *list);
@@ -216,4 +217,53 @@ void freeLinklist(node *list)
         free(cur);
         cur = next;
     }
+}
+
+void outbound(char *ID)
+{
+    time_t now;
+    struct tm *currentTime;
+
+    //* Open the file and load the linkist.
+    FILE *parcelData = openParcel("r");
+    node *list = loadLinklist(parcelData);
+    fclose(parcelData);
+    int matchCount = 0;
+
+    //* Go through the linklist to match the target item.
+    for (node *cur = list, *before = NULL; cur != NULL; before = cur, cur = cur->next)
+    {
+        if (matchedLine(cur, ID))
+        {
+            now = time(NULL);
+            currentTime = localtime(&now);
+            cur->data.state = OUTBOUND;
+            cur->data.unload_time.year = currentTime->tm_year + 1900;
+            cur->data.unload_time.month = currentTime->tm_mon;
+            cur->data.unload_time.day = currentTime->tm_mday;
+            cur->data.unload_time.hour = currentTime->tm_hour;
+            cur->data.unload_time.minute = currentTime->tm_min;
+            cur->data.unload_time.second = currentTime->tm_sec;
+            matchCount++;
+            printf("Outbounded!\n");
+        }
+    }
+    //* Check if there is matched items, if not, tell the user.
+    if (matchCount == 0)
+    {
+        printf("Not matched! Check your input.\n");
+    }
+
+    //* Free the linklist.
+    parcelData = openParcel("w+");
+
+    for (node *cur = list, *next = NULL; cur != NULL;)
+    {
+        next = cur->next;
+        writeLine(&(cur->data), parcelData);
+        free(cur);
+        cur = next;
+    }
+
+    fclose(parcelData);
 }
