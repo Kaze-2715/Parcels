@@ -1,7 +1,10 @@
 #include "user.h"
+#include "log.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
+extern log logger;
 
 //! 详见matchedName()的优化，getuser()也适用这个优化方法
 user getUser()
@@ -29,10 +32,12 @@ void userLogin(user *user)
         puts("Logged in. Welcome!");
         LOGGED = 1;
         ACCESSIBLE = user->rooted;
+        logger.print(INFO, "%s logged in", user->username);
     }
     else
     {
         puts("Error: No such user. Check your input or sign up for an account.");
+        logger.print(ERROR, "someone tried to login with '%s', but failed", user->username);
     }
     return;
 }
@@ -42,11 +47,13 @@ void userLogout(user *user)
     if (!LOGGED)
     {
         puts("You have not logged in!");
+        logger.print(ERROR, "someone tried to logout, but he never logged in");
         return;
     }
     
     LOGGED = 0;
     ACCESSIBLE = 0;
+    logger.print(INFO, "logged out");
     puts("Logged out. Bye.");
     return;
 }
@@ -78,17 +85,20 @@ void createUser(user *user)
     if (!LOGGED)
     {
         puts("You have not logged in!");
+        logger.print(ERROR, "someone tried to create a user, but he didn't logged in");
         return;
     }
     if (!ACCESSIBLE)
     {
         puts("You are not authorized!");
+        logger.print(ERROR, "tried to create a user without an authorization");
         return;
     }
     
     if (matchedName(user))
     {
         puts("User exists. Please log in");
+        logger.print(ERROR, "tried to create a user which exists");
         return;
     }
 
@@ -99,14 +109,23 @@ void createUser(user *user)
     fprintf(userData, "%s %s %d\n", user->username, user->password, accessibility);
     fclose(userData);
     printf("Created\n\n\n");
+    logger.print(INFO, "create a user '%s'", user->username);
     return;
 }
 
 void deleteUser(user *User)
 {
+    if (!ACCESSIBLE)
+    {
+        puts("Not authorized.");
+        logger.print(ERROR, "tried to delete a user '%s' without authorize.", User->username);
+        return;
+    }
+    
     if (!matchedName(User))
     {
         puts("User does not exists. Check your input.");
+        logger.print(ERROR, "tried to delete a user which doesn't exist");
         return;
     }
     
@@ -144,6 +163,7 @@ void deleteUser(user *User)
         }
         fprintf(userData, "%s %s %d\n", users[i].username, users[i].password, users[i].rooted);
     }
+    logger.print(INFO, "deleted a user '%s'.", User->username);
     printf("Deleted\n\n\n");
     return;
 }
@@ -160,9 +180,17 @@ void updateUser(user *inputUser)
         ROOT = 2
     } key;
 
+    if (!ACCESSIBLE)
+    {
+        puts("Not authorized.");
+        logger.print(ERROR, "tried to update a user '%s' without authorize", inputUser->username);
+        return;
+    }
+    
     if (!matched(inputUser))
     {
         puts("User does not exists. Check your input.");
+        logger.print(ERROR, "tried to update a user '%s' which doesn't exist", inputUser->username);
         return;
     }
 
@@ -238,6 +266,7 @@ void updateUser(user *inputUser)
         fprintf(userData, "%s %s %d\n", users[i].username, users[i].password, users[i].rooted);
     }
     printf("Updated\n\n\n");
+    logger.print(INFO, "updated a user '%s'", inputUser->username);
     fclose(userData);
     return;
 }

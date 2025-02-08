@@ -1,9 +1,3 @@
-typedef enum Object
-{
-    PARCEL = 0,
-    LOG
-} object;
-
 typedef struct Time
 {
     int year;
@@ -23,14 +17,6 @@ typedef struct Parcel
     time unload_time;
     time load_time;
 } parcel;
-
-typedef struct Log
-{
-    char user[10];
-    char operation[15];
-    object obj;
-    time log_time;
-} log;
 
 typedef struct node
 {

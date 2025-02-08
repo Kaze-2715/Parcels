@@ -1,12 +1,14 @@
 #include "defines.h"
 #include "declarations.h"
 #include "user.h"
+#include "log.h"
 #include <stdio.h>
 
 int LOGGED = 0;
 int ACCESSIBLE = 0;
 int Start = 0;
 user currentUser;
+log logger;
 
 // ----------------------------------------
 // @author Kaze
@@ -15,6 +17,8 @@ user currentUser;
 // ----------------------------------------
 int main(void)
 {
+    start();
+    
     printf("Glad to see you! How's your day?\n\n");
     printf("If needed, please enter '-help' for further instructions.\n");
     printf("Don't forget to login first.\n");
@@ -27,11 +31,11 @@ int main(void)
 
         code = getCommand();  
 
-        // if (code == -1)   //* To check whether the function get a valid code.
-        // {
-        //     printf("Command error: No such command.\n");
-        //     continue;
-        // }
+        if (code == -1)   //* To check whether the function get a valid code.
+        {
+            printf("Command error: No such command.\n");
+            continue;
+        }
         if (code <= 10)   //* To check whether the command needs a permission.
         {
             needPermission = 0;
@@ -168,8 +172,15 @@ int help()
 
 void start()
 {
-    printf("Started\n\n\n");
+    initLog();
+    do
+    {
+        login();
+    } while (!LOGGED);
+    printf("Started\n\n");
+    logger.print(INFO, "%s", "started the system");
     Start = 1;
+    return;
 }
 
 void login()

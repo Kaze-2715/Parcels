@@ -10,6 +10,7 @@ void initLog()
     logger.User = &currentUser;
     logger.print = printLog;
     logger.destroy = destroyLog;
+    puts("Logger initialized.");
     return;
 }
 
@@ -26,8 +27,8 @@ void printLog(Level level, const char *format, ...)
     va_list args;
     char timeStr[24];
     char levelStr[8];
-    char userinput[64];
-    char logStr[128];
+    char userinput[128];
+    char logStr[256];
 
     time(&now);
     currentTime = localtime(&now);
