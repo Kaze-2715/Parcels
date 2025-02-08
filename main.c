@@ -40,11 +40,6 @@ int main(void)
         {
             needPermission = 0;
         }
-        if ((code >= 4) && (code <= 14)) //* To check whether the command need to start the data system.
-        {
-            need2start = 1;
-        }
-        
         if ((!LOGGED) && needPermission) //* To check whether the user logged in his account.
         {
             printf("Please login first!\n");
@@ -53,11 +48,6 @@ int main(void)
         if ((!ACCESSIBLE) && needPermission) //* To check whether the user has the permission to access.
         {
             printf("You are not accessible! Please acquire permissions.\n");
-            continue;
-        }
-        if ((!Start) && need2start) //* To check whether the system has been started.
-        {
-            printf("Please start the system first!\n");
             continue;
         }
 
@@ -266,6 +256,7 @@ void add()
     {
         one = inputParcel();
         writeLine(&one, parcelData);
+        logger.print(INFO, "added a parcel: %s", one.ID);
         printf("Add complete\n\n");
     } while (getchoose());
 
@@ -274,9 +265,7 @@ void add()
 
 //* @brief Continuously doing get ID and delete the line until the user dicided to stop it.
 void delete()
-{
-    parcel one;
-    
+{ 
     do
     {
         char ID[20] = {0};
@@ -285,6 +274,7 @@ void delete()
         getchar();
 
         deleteLine(ID);
+        logger.print(INFO, "deleted a parcel: %s", ID);
         printf("Delete complete\n\n");
     } while (getchoose());
 }
@@ -299,6 +289,7 @@ void update()
         scanf("%19s", ID);
         getchar();
         updateLine(ID);
+        logger.print(INFO, "updated a parcel: %s", ID);
         printf("Update complete\n\n");
     } while (getchoose());
 }
@@ -312,6 +303,7 @@ void select()
         scanf("%19s", ID);
         getchar();
         selectLine(ID);
+        logger.print(INFO, "selected a parcel: %s", ID);
     } while (getchoose());
 }
 
