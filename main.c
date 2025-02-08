@@ -198,23 +198,24 @@ void logout()
 
 void stop()
 {
-    printf("Stopped\n\n\n");
+    printf("Stopped\n\n");
     return;
 }
 
 void reload()
 {
-    printf("Reloaded\n\n\n");
+    printf("Reloaded\n\n");
 }
 
 void save()
 {
-    printf("Saved\n\n\n");
+    printf("Saved\n\n");
 }
 
 void halt()
 {
-    printf("Halted\n\n\n");
+    logger.print(INFO, "stopped the system");
+    printf("Halted\n\n");
 }
 
 void dataFilter()
@@ -232,7 +233,7 @@ void dataFilter()
 
     } while (getchoose());
     
-    //printf("Filtered\n\n\n");
+    //printf("Filtered\n\n");
 }
 
 void dataSort()
@@ -252,7 +253,7 @@ void dataSort()
 
 void dataVisual()
 {
-    printf("Visualized\n\n\n");
+    printf("Visualized\n\n");
 }
 
 //* @brief Continuously doing get info and wrtie a line until the user decided to stop it.

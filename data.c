@@ -1,13 +1,16 @@
 // #include "defines.h"
 #include "file_io.h"
 #include "user_io.h"
+#include "log.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-int timeLaterThan(time floor, time cur);
-int timeEarlierThan(time ceil, time cur);
-int getOpCode(char *key);
+extern log logger;
+
+static int timeLaterThan(time floor, time cur);
+static int timeEarlierThan(time ceil, time cur);
+static int getOpCode(char *key);
 void sortFrom(node *list, int rule);
 void sortTo(node *list, int rule);
 void sortLoadTime(node *list, int rule);
@@ -24,18 +27,35 @@ void filter(char *key)
     node *list = loadLinklist(parcelData);
     fclose(parcelData);
 
+    typedef enum Criteria
+    {
+        FROM = 1,
+        TO,
+        ID,
+        STATUS,
+        LOADTIME,
+        UNLOADTIME
+    } Criteria;
+
+    typedef enum timeFilter
+    {
+        BETWEEN = 1,
+        LATER,
+        EARLIER
+    } timefilter;
+
     char input[20] = {0};
     int matchCount = 0;
-    int code = 0;
+    int criteria = 0;
     int mode = 0;
     time floor;
     time ceil;
 
-    code = getOpCode(key);
+    criteria = getOpCode(key);
 
-    switch (code)
+    switch (criteria)
     {
-    case 1:
+    case FROM:
 
         printf("Criteria: ");
         scanf("%s", input);
@@ -52,9 +72,11 @@ void filter(char *key)
                 matchCount++;
             }
         }
+        //* 给后面输出日志用
+        strcpy(input, "FROM");
         break;
 
-    case 2:
+    case TO:
         printf("Criteria: ");
         scanf("%s", input);
         getchar();
@@ -70,9 +92,10 @@ void filter(char *key)
                 matchCount++;
             }
         }
+        strcpy(input, "TO");
         break;
 
-    case 3:
+    case ID:
         printf("Criteria: ");
         scanf("%s", input);
         getchar();
@@ -88,9 +111,10 @@ void filter(char *key)
                 matchCount++;
             }
         }
+        strcpy(input, "ID");
         break;
 
-    case 4:
+    case STATUS:
         int status;
         printf("Criteria: ");
         scanf("%d", &status);
@@ -108,17 +132,19 @@ void filter(char *key)
                 matchCount++;
             }
         }
+        strcpy(input, "STATUS");
         break;
     // TODO 为时间筛选设计单独的判断标准输入，以及评判条件，5和6基本相同，可以复制
-    case 5:
-        mode = 0;
+    case LOADTIME:
+        int Timerfilter = 0;
         printf("Select the filter mode, 1 for between, 2 for later, 3 for earlier\n");
-        scanf("%d", &mode);
+        scanf("%d", &Timerfilter);
         getchar();
 
-        switch (mode)
+        strcpy(input, "LOADTIME by ");
+        switch (Timerfilter)
         {
-        case 1:
+        case BETWEEN:
             printf("Earliest time: ");
             scanf("%d %d %d %d %d %d", &floor.year, &floor.month, &floor.day, &floor.hour, &floor.minute, &floor.second);
             getchar();
@@ -138,10 +164,10 @@ void filter(char *key)
                     matchCount++;
                 }
             }
-
+            strcat(input, "BETWEEN");
             break;
 
-        case 2:
+        case LATER:
             printf("Earliest time: ");
             scanf("%d %d %d %d %d %d", &floor.year, &floor.month, &floor.day, &floor.hour, &floor.minute, &floor.second);
             getchar();
@@ -157,10 +183,10 @@ void filter(char *key)
                     matchCount++;
                 }
             }
-
+            strcat(input, "LATER");
             break;
 
-        case 3:
+        case EARLIER:
             printf("Latest time: ");
             scanf("%d %d %d %d %d %d", &ceil.year, &ceil.month, &ceil.day, &ceil.hour, &ceil.minute, &ceil.second);
             getchar();
@@ -177,7 +203,7 @@ void filter(char *key)
                     matchCount++;
                 }
             }
-
+            strcat(input, "EARLIER");
             break;
 
         default:
@@ -185,15 +211,17 @@ void filter(char *key)
         }
         break;
 
-    case 6:
-        mode = 0;
+    case UNLOADTIME:
+        int Timefilter = 0;
         printf("Select the filter mode, 1 for between, 2 for later, 3 for earlier\n");
-        scanf("%d", &mode);
+        scanf("%d", &Timefilter);
         getchar();
 
-        switch (mode)
+        strcpy(input, "UNLOADTIME by ");
+
+        switch (Timefilter)
         {
-        case 1:
+        case BETWEEN:
             printf("Earliest time: ");
             scanf("%d %d %d %d %d %d", &floor.year, &floor.month, &floor.day, &floor.hour, &floor.minute, &floor.second);
             getchar();
@@ -213,10 +241,10 @@ void filter(char *key)
                     matchCount++;
                 }
             }
-
+            strcat(input, "BETWEEN");
             break;
 
-        case 2:
+        case LATER:
             printf("Earliest time: ");
             scanf("%d %d %d %d %d %d", &floor.year, &floor.month, &floor.day, &floor.hour, &floor.minute, &floor.second);
             getchar();
@@ -232,10 +260,10 @@ void filter(char *key)
                     matchCount++;
                 }
             }
-
+            strcat(input, "LATER");
             break;
 
-        case 3:
+        case EARLIER:
             printf("Latest time: ");
             scanf("%d %d %d %d %d %d", &ceil.year, &ceil.month, &ceil.day, &ceil.hour, &ceil.minute, &ceil.second);
             getchar();
@@ -252,7 +280,7 @@ void filter(char *key)
                     matchCount++;
                 }
             }
-
+            strcat(input, "EARLIER");
             break;
 
         default:
@@ -261,8 +289,10 @@ void filter(char *key)
 
     default:
         printf("Invalid key, check your input!\n");
+        strcpy(input, "INVALID KEY");
         break;
     }
+    logger.print(INFO, "filtered data with %s", input);
 
     // TODO 释放链表
     freeLinklist(list);
@@ -270,23 +300,49 @@ void filter(char *key)
 
 void sort(char *key)
 {
+    typedef enum Criteria
+    {
+        FROM = 1,
+        TO,
+        ID,
+        STATUS,
+        LOADTIME,
+        UNLOADTIME
+    } Criteria;
+
+    typedef enum Rule
+    {
+        DESCENDING = -1,
+        ASCENDING = 1
+    } Rule;
+
     //* 排序的关键字段有来，去，时间，状态（key）
     //* 排序的规则有升序和降序
     int rule = 0;
     int code = -1;
+    char criteiriaStr[12];
+    char ruleStr[12];
 
     printf("Input the rule of sorting, -1 is descending, 1 is ascending: ");
     scanf("%d", &rule);
     getchar();
 
-    if (!((rule == -1) || (rule == 1)))
+    if (!((rule == DESCENDING) || (rule == ASCENDING)))
     {
         do
         {
             printf("Error rule input! Input again: ");
             scanf("%d", &rule);
             getchar();
-        } while (!((rule == -1) || (rule == 1)));
+        } while (!((rule == DESCENDING) || (rule == ASCENDING)));
+    }
+    if (rule == DESCENDING)
+    {
+        strcpy(ruleStr, "DESCENDING");
+    }
+    else
+    {
+        strcpy(ruleStr, "ASCENDING");
     }
 
     // TODO 加载链表
@@ -309,26 +365,32 @@ void sort(char *key)
 
     switch (code)
     {
-    case 1:
+    case FROM:
         sortFrom(list, rule);
+        strcpy(criteiriaStr, "FROM");
         break;
 
-    case 2:
+    case TO:
         sortTo(list, rule);
+        strcpy(criteiriaStr, "TO");
         break;
 
-    case 5:
+    case LOADTIME:
         sortLoadTime(list, rule);
+        strcpy(criteiriaStr, "LOADTIME");
         break;
 
-    case 6:
+    case UNLOADTIME:
         sortUnloadTime(list, rule);
+        strcpy(criteiriaStr, "UNLOADTIME");
         break;
 
     default:
+        strcpy(criteiriaStr, "INVALIDKEY");
         break;
     }
 
+    logger.print(INFO, "sorted the data with '%s' by '%s'", criteiriaStr, ruleStr);
     // TODO 卸载链表
     freeLinklist(list);
 }
@@ -524,11 +586,11 @@ int getOpCode(char *key)
 
 void sortFrom(node *list, int rule)
 {
-    //TODO 使用选择排序来实现排序
+    // TODO 使用选择排序来实现排序
     //*外层循环实现遍历所有链表节点
     //*内层循环实现进行所有比较
     //*需要的指针变量：1.标识当前确定的位 2.标识选择的位
-    for (node *cur = list; cur->next != NULL; cur = cur ->next)
+    for (node *cur = list; cur->next != NULL; cur = cur->next)
     {
         node *max = cur->next;
         for (node *select = cur->next; select != NULL; select = select->next)
@@ -537,21 +599,20 @@ void sortFrom(node *list, int rule)
             {
                 max = select;
             }
-
         }
         parcel tmp = cur->data;
         cur->data = max->data;
         max->data = tmp;
     }
 
-    //TODO 输出排序结果
+    // TODO 输出排序结果
     for (node *ptr = list; ptr != NULL; ptr = ptr->next)
     {
         outputParcel(&(ptr->data));
     }
 
-    //TODO 释放链表
-    //freeLinklist(list);
+    // TODO 释放链表
+    // freeLinklist(list);
 }
 
 void sortTo(node *list, int rule)
@@ -582,7 +643,7 @@ void sortTo(node *list, int rule)
     }
 
     // TODO 释放链表
-    //freeLinklist(list);
+    // freeLinklist(list);
 }
 
 void sortLoadTime(node *list, int rule)
@@ -638,7 +699,7 @@ void sortLoadTime(node *list, int rule)
     }
 
     // TODO 释放链表
-    //freeLinklist(list);
+    // freeLinklist(list);
 }
 
 // void sortLoadTime(node *list, int rule)
@@ -750,10 +811,10 @@ void sortUnloadTime(node *list, int rule)
         {
             continue;
         }
-        
+
         outputParcel(&(ptr->data));
     }
 
     // TODO 释放链表
-    //freeLinklist(list);
+    // freeLinklist(list);
 }
