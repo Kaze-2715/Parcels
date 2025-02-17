@@ -3,13 +3,18 @@
 #include "user.h"
 #include "log.h"
 #include <stdio.h>
+#include <sqlite3.h>
 
 int LOGGED = 0;
 int ACCESSIBLE = 0;
 int Start = 0;
 user currentUser;
 log logger;
+sqlite3 *parcelHub = NULL;
+char *errorMessage = NULL;
+int databaseStatus = SQLITE_OK;
 
+static int databaseError(char *systemOpration, char *databaseOpration);
 // ----------------------------------------
 // @author Kaze
 // @date 2024.12.14
@@ -167,12 +172,43 @@ int help()
 
 void start()
 {
+    const char *sql = NULL;
     initLog();
+    sqlite3_open("parcelhub.db", &parcelHub);
+    if (databaseError("Starting system", "opening database"))
+    {
+        return;
+    }
+
+    sql = "CREATE TABLE IF NOT EXISTS PARCELS ("
+          "origin TEXT NOT NULL,"
+          "destination   TEXT NOT NULL,"
+          "id     TEXT PRIMARY KEY NOT NULL,"
+          "status INT  NOT NULL,"
+          "intime TEXT NOT NULL,"
+          "outtime);";
+    databaseStatus = sqlite3_exec(parcelHub, sql, NULL, NULL, &errorMessage);
+    if (databaseError("Starting system", "creating table 'parcels'"))
+    {
+        return;
+    }
+
+    sql = "CREATE TABLE IF NOT EXISTS USERS ("
+          "username TEXT PRIMARY KEY NOT NULL,"
+          "password TEXT NOT NULL,"
+          "accessibility INT NOT NULL);";
+    databaseStatus = sqlite3_exec(parcelHub, sql, NULL, NULL, &errorMessage);
+    if (databaseError("Starting system", "creating table 'users'"))
+    {
+        return;
+    }
+    
+
     do
     {
         login();
     } while (!LOGGED);
-    printf("Started\n\n");
+    //printf("Started\n\n");
     logger.print(INFO, "%s", "started the system");
     Start = 1;
     return;
@@ -211,7 +247,8 @@ void halt()
 {
     logger.print(INFO, "stopped the system");
     logger.destroy();
-    printf("Halted\n\n");
+    sqlite3_close(parcelHub);
+    //printf("Halted\n\n");
 }
 
 void dataFilter()
@@ -256,17 +293,19 @@ void dataVisual()
 void inBound()
 {
     parcel one;
-    FILE *parcelData = openParcel("a+");
+    char sql[256];
+    //FILE *parcelData = openParcel("a+");
 
     do
     {
         one = inbound();
-        writeLine(&one, parcelData);
+        
+        //writeLine(&one, parcelData);
         logger.print(INFO, "inbounded a parcel: %s", one.ID);
         printf("Add complete\n\n");
     } while (chooseToContinue());
 
-    fclose(parcelData);
+    //fclose(parcelData);
 }
 
 void outBound()
@@ -389,4 +428,15 @@ void userUpdate()
     user toBeUpdated = getUser();
     updateUser(&toBeUpdated);
     return; 
+}
+
+int databaseError(char *systemOpration, char *databaseOpration)
+{
+    if (databaseStatus != SQLITE_OK)
+    {
+        printf("%s: %s\n",databaseOpration ,sqlite3_errmsg(parcelHub));
+        logger.print(ERROR, "%s but failed when %s: %s",systemOpration, databaseOpration, errorMessage);
+        return 1;
+    }
+    return 0;
 }

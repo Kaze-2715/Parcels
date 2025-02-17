@@ -56,3 +56,5 @@ dkms.conf
 
 # Driver files
 driver.c
+
+.vscode/
