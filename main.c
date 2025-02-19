@@ -196,7 +196,10 @@ void start()
     sql = "CREATE TABLE IF NOT EXISTS USERS ("
           "username TEXT PRIMARY KEY NOT NULL,"
           "password TEXT NOT NULL,"
-          "accessibility INT NOT NULL);";
+          "accessibility INT NOT NULL);"
+          "INSERT OR IGNORE INTO USERS"
+          "(username, password, accessibility)"
+          "VALUES ('root', '123456', 1);";
     databaseStatus = sqlite3_exec(parcelHub, sql, NULL, NULL, &errorMessage);
     if (databaseError("Starting system", "creating table 'users'"))
     {
