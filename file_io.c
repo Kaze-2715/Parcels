@@ -45,7 +45,8 @@ int readLine(parcel *one, FILE *parcelData)
     one->state = 0; //*Set the loading status to "Not unloaded" on default.
     readState = sscanf(buffer, "%[^,],%[^,],%[^,],%d,%d.%d.%d.%d.%d.%d,%d.%d.%d.%d.%d.%d\n", one->from, one->to, one->ID, &one->state, &one->load_time.year, &one->load_time.month, &one->load_time.day, &one->load_time.hour, &one->load_time.minute, &one->load_time.second, &one->unload_time.year, &one->unload_time.month, &one->unload_time.day, &one->unload_time.hour, &one->unload_time.minute, &one->unload_time.second);
 
-    return readState; //* Return the read state, a positive number is "succcess", 0 or negative is "failed".
+    return (readState == 16) ? 1 : 0;
+    //* Return the read state, a positive number is "succcess", 0 or negative is "failed".
 }
 
 void writeLine(parcel *one, FILE *parcelData)
