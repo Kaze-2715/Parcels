@@ -3,9 +3,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sqlite3.h>
 
 extern log logger;
+extern sqlite3 *parcelHub;
+extern sqlite3_stmt *statement;
+extern int databaseStatus;
+extern char *errorMessage;
 
+int welcomeUser(void *data, int columnCount, char *columnValue[], char *columnName[]);
+static int databaseError(char *systemOpration, char *databaseOpration);
 //! 详见matchedName()的优化，getuser()也适用这个优化方法
 user getUser()
 {
@@ -27,10 +34,22 @@ user getUser()
 
 void userLogin(user *user)
 {
-    if (matched(user))
+    sqlite3_stmt *statement = NULL;
+    char sql[128] = "SELECT * FROM USERS ";
+    char condition[64] = {0};
+    snprintf(condition, 64, "WHERE username = '?' AND password = '?';", user->username, user->password);
+    strcat(sql, condition);
+
+    // databaseStatus = sqlite3_exec(parcelHub, sql, welcomeUser, "Logged in. Welcome!", &errorMessage);
+    databaseStatus = sqlite3_prepare_v2(parcelHub, sql, -1, &statement, NULL);
+
+    sqlite3_bind_text(statement, 1, user->username, -1, SQLITE_STATIC);
+    sqlite3_bind_text(statement, 2, user->password, -1, SQLITE_STATIC);
+
+    if (sqlite3_step(statement) == SQLITE_ROW)
     {
-        puts("Logged in. Welcome!");
         LOGGED = 1;
+        user->rooted = atoi(sqlite3_column_text(statement, 2));
         ACCESSIBLE = user->rooted;
         logger.print(INFO, "%s logged in", user->username);
     }
@@ -39,6 +58,27 @@ void userLogin(user *user)
         puts("Error: No such user. Check your input or sign up for an account.");
         logger.print(ERROR, "someone tried to login with '%s', but failed", user->username);
     }
+
+    return;
+
+    // if (!LOGGED)
+    // {
+    //     puts("Error: No such user. Check your input or sign up for an account.");
+    //     logger.print(ERROR, "someone tried to login with '%s', but failed", user->username);
+    // }
+
+    // if (matched(user))
+    // {
+    //     puts("Logged in. Welcome!");
+    //     LOGGED = 1;
+    //     ACCESSIBLE = user->rooted;
+    //     logger.print(INFO, "%s logged in", user->username);
+    // }
+    // else
+    // {
+    //     puts("Error: No such user. Check your input or sign up for an account.");
+    //     logger.print(ERROR, "someone tried to login with '%s', but failed", user->username);
+    // }
     return;
 }
 
@@ -81,6 +121,9 @@ static int matched(user *inputUser)
 void createUser(user *user)
 {
     int accessibility;
+    int Changed = 1;
+    char sql[64] = "INSERT OR IGNORE INTO USERS (username, password, accessibility) VALUES (?, ?, ?);";
+    sqlite3_stmt *statement = NULL;
 
     if (!LOGGED)
     {
@@ -94,180 +137,281 @@ void createUser(user *user)
         logger.print(ERROR, "tried to create a user without an authorization");
         return;
     }
-    
-    if (matchedName(user))
-    {
-        puts("User exists. Please log in");
-        logger.print(ERROR, "tried to create a user which exists");
-        return;
-    }
 
     printf("Is it authorized? (0 for no, 1 for yes): ");
     scanf("%d", &accessibility);
     getchar();
-    FILE *userData = fopen("E:/BaiduSyncdisk/03_CODE/VSCode_Workspace/Infomation_Manager/userdata.txt", "a");
-    fprintf(userData, "%s %s %d\n", user->username, user->password, accessibility);
-    fclose(userData);
-    printf("Created\n\n\n");
-    logger.print(INFO, "create a user '%s'", user->username);
+
+    // if (matchedName(user))
+    // {
+    //     puts("User exists. Please log in");
+    //     logger.print(ERROR, "tried to create a user which exists");
+    //     return;
+    // }
+
+    sqlite3_prepare_v2(parcelHub, sql, -1, &statement, NULL);
+
+    sqlite3_bind_text(statement, 1, user->username, -1, SQLITE_STATIC);
+    sqlite3_bind_text(statement, 2, user->password, -1, SQLITE_STATIC);
+    sqlite3_bind_int(statement, 3, accessibility);
+
+    sqlite3_step(statement);
+
+    Changed = sqlite3_changes(parcelHub);
+
+    if (!Changed)
+    {
+        puts("User exists. Please log in");
+        logger.print(ERROR, "tried to create a user which exists");
+    }
+    else
+    {
+        printf("Created\n\n");
+        logger.print(INFO, "create a user '%s'", user->username);
+    }
+    
+    // FILE *userData = fopen("E:/BaiduSyncdisk/03_CODE/VSCode_Workspace/Infomation_Manager/userdata.txt", "a");
+    // fprintf(userData, "%s %s %d\n", user->username, user->password, accessibility);
+    // fclose(userData);
+    
     return;
 }
 
 void deleteUser(user *User)
 {
-    if (!ACCESSIBLE)
+    int changed = -1;
+    sqlite3_stmt *statement = NULL;
+    char sql[64] = "DELETE FROM USERS WHERE username = ? AND password = ?;";
+
+    sqlite3_prepare_v2(parcelHub, sql, -1, &statement, NULL);
+
+    sqlite3_bind_text(statement, 1, User->username, -1, SQLITE_STATIC);
+    sqlite3_bind_text(statement, 2, User->password, -1, SQLITE_STATIC);
+
+    if (sqlite3_step(statement) == SQLITE_DONE)
     {
-        puts("Not authorized.");
-        logger.print(ERROR, "tried to delete a user '%s' without authorize.", User->username);
-        return;
+        logger.print(INFO, "deleted a user '%s'", User->username);
+        printf("Deleted\n\n");
     }
-    
-    if (!matchedName(User))
+    else
     {
         puts("User does not exists. Check your input.");
-        logger.print(ERROR, "tried to delete a user which doesn't exist");
-        return;
+        logger.print(ERROR, "tried to delete a user which doesn't exist or input wrong password");
     }
     
-    FILE *userData = fopen("E:/BaiduSyncdisk/03_CODE/VSCode_Workspace/Infomation_Manager/userdata.txt", "r");
-    char ch;
-    int userCount = 0;
-    while ((ch = fgetc(userData)) != EOF)
-    {
-        if (ch == '\n')
-        {
-            userCount++;
-        }
-        
-    }
-    user *users = malloc(userCount * sizeof(user));
-    char buffer[100];
-    user readUser;
-    rewind(userData);
-    for (int i = 0; i < userCount; i++)
-    {
-        fscanf(userData, "%s %s %d\n", users[i].username, users[i].password, &users[i].rooted);
-        if (!strcmp(users[i].username, User->username))
-        {
-            users[i].username[0] = '\0';
-        }
-        
-    }
-    fclose(userData);
-    userData = fopen("E:/BaiduSyncdisk/03_CODE/VSCode_Workspace/Infomation_Manager/userdata.txt", "w");
-    for (int i = 0; i < userCount; i++)
-    {
-        if (users[i].username[0] == '\0')
-        {
-            continue;
-        }
-        fprintf(userData, "%s %s %d\n", users[i].username, users[i].password, users[i].rooted);
-    }
-    logger.print(INFO, "deleted a user '%s'.", User->username);
-    printf("Deleted\n\n\n");
+    // if (!matchedName(User))
+    // {
+    //     puts("User does not exists. Check your input.");
+    //     logger.print(ERROR, "tried to delete a user which doesn't exist");
+    //     return;
+    // }
+
+    // FILE *userData = fopen("E:/BaiduSyncdisk/03_CODE/VSCode_Workspace/Infomation_Manager/userdata.txt", "r");
+    // char ch;
+    // int userCount = 0;
+    // while ((ch = fgetc(userData)) != EOF)
+    // {
+    //     if (ch == '\n')
+    //     {
+    //         userCount++;
+    //     }
+
+    // }
+    // user *users = malloc(userCount * sizeof(user));
+    // char buffer[100];
+    // user readUser;
+    // rewind(userData);
+    // for (int i = 0; i < userCount; i++)
+    // {
+    //     fscanf(userData, "%s %s %d\n", users[i].username, users[i].password, &users[i].rooted);
+    //     if (!strcmp(users[i].username, User->username))
+    //     {
+    //         users[i].username[0] = '\0';
+    //     }
+
+    // }
+    // fclose(userData);
+    // userData = fopen("E:/BaiduSyncdisk/03_CODE/VSCode_Workspace/Infomation_Manager/userdata.txt", "w");
+    // for (int i = 0; i < userCount; i++)
+    // {
+    //     if (users[i].username[0] == '\0')
+    //     {
+    //         continue;
+    //     }
+    //     fprintf(userData, "%s %s %d\n", users[i].username, users[i].password, users[i].rooted);
+    // }
     return;
 }
 
 void updateUser(user *inputUser)
 {
-    char ch;
-    int userCount = 0;
-    char buffer[100];
-    user readUser;
+    //char ch;
+    //int userCount = 0;
+    //char buffer[100];
+    //user readUser;
+    
     typedef enum keys
     {
+        USERNAME = 0,
         PASSWORD = 1,
         ROOT = 2
     } key;
+    char query[64] = "SELECT * FROM USERS WHERE username = ?;";
+    char update[64] = "UPDATE USERS SET ? = ? WHERE username = ?;";
+    char criteria[16] = {0};
 
-    if (!ACCESSIBLE)
-    {
-        puts("Not authorized.");
-        logger.print(ERROR, "tried to update a user '%s' without authorize", inputUser->username);
-        return;
-    }
-    
-    if (!matched(inputUser))
-    {
-        puts("User does not exists. Check your input.");
-        logger.print(ERROR, "tried to update a user '%s' which doesn't exist", inputUser->username);
-        return;
-    }
+    sqlite3_prepare_v2(parcelHub, query, -1, &statement, NULL);
 
-    FILE *userData = fopen("E:/BaiduSyncdisk/03_CODE/VSCode_Workspace/Infomation_Manager/userdata.txt", "r");
-    
-    while ((ch = fgetc(userData)) != EOF)
+    sqlite3_bind_text(statement, 1, inputUser->username, -1, SQLITE_STATIC);
+
+    if (sqlite3_step(statement) == SQLITE_ROW && !strcmp(sqlite3_column_text(statement, 1), inputUser->password))
     {
-        if (ch == '\n')
+        sqlite3_prepare_v2(parcelHub, update, -1, &statement, NULL);
+        sqlite3_bind_text(statement, 3, inputUser->username, -1, SQLITE_STATIC);
+
+        printf("Enter the key to update: ");
+        sgets(criteria, 16);
+
+        if (!strcasecmp(criteria, "username"))
         {
-            userCount++;
+            sqlite3_bind_text(statement, 1, "username", -1, SQLITE_STATIC);
+
+            char newUsername[16];
+            printf("Enter the new username: ");
+            sgets(newUsername, 16);
+            sqlite3_bind_text(statement, 2, newUsername, -1, SQLITE_STATIC);
+
+            if (sqlite3_step(statement) == SQLITE_ROW)
+            {
+                printf("Changed username from %s into %s\n", inputUser->username, sqlite3_column_text(statement, 0));
+            }
+            else
+            {
+                printf("Database error: %s, nothing updated\n", sqlite3_errmsg(parcelHub));
+            }
+        }
+        else if (!strcasecmp(criteria, "password"))
+        {
+            sqlite3_bind_text(statement, 1, "password", -1, SQLITE_STATIC);
+
+            char newPassword[20];
+            printf("Enter the new password: ");
+            sgets(newPassword, 20);
+            sqlite3_bind_text(statement, 2, newPassword, -1, SQLITE_STATIC);
+
+            if (sqlite3_step(statement) == SQLITE_ROW)
+            {
+                printf("Changed password from %s into %s\n", inputUser->password, sqlite3_column_text(statement, 1));
+            }
+            else
+            {
+                printf("Database error: %s, nothing updated\n", sqlite3_errmsg(parcelHub));
+            }
+        }
+        else if (!strcasecmp(criteria, "accessbility"))
+        {
+            int newAccessbility = -1;
+
+            sqlite3_bind_text(statement, 1, "accessibility", -1, SQLITE_STATIC);
+            printf("Enter the new accessibility: ");
+            scanf("%d", &newAccessbility);
+            getchar();
+            sqlite3_bind_int(statement, 2, newAccessbility);
+
+            if (sqlite3_step(statement) == SQLITE_ROW)
+            {
+                printf("Changed accessbility from %d into %d\n", inputUser->rooted, sqlite3_column_int(statement, 1));
+            }
+            else
+            {
+                printf("Database error: %s, nothing updated\n", sqlite3_errmsg(parcelHub));
+            }
         }
     }
-    rewind(userData);
-    user *users = malloc(userCount * sizeof(user));
-    for (int i = 0; i < userCount; i++)
+    else
     {
-        fscanf(userData, "%s %s %d\n", users[i].username, users[i].password, &users[i].rooted);
+        puts("Error username or password input");
     }
-    fclose(userData);
-
-    userData = fopen("E:/BaiduSyncdisk/03_CODE/VSCode_Workspace/Infomation_Manager/userdata.txt", "w");
-    //* 先不做这个权限的更改了，目前来看权限是创建用户的时候就定好的
-    // puts("Enter the key you want to update: (password or root)");
-    // sgets(buffer, 10);
-    // int target = 0;
-    // if (!strcasecmp(buffer, "password"))
+    // if (!matched(inputUser))
     // {
-    //     target = PASSWORD;
-    // }
-    // else if (!strcasecmp(buffer, "root"))
-    // {
-    //     target = ROOT;
+    //     puts("User does not exists. Check your input.");
+    //     logger.print(ERROR, "tried to update a user '%s' which doesn't exist", inputUser->username);
+    //     return;
     // }
 
-    for (int i = 0; i < userCount; i++)
-    {
-        if (!strcmp(users[i].username, inputUser->username))
-        {
-            // switch (target)
-            // {
-            // case PASSWORD:
+    // FILE *userData = fopen("E:/BaiduSyncdisk/03_CODE/VSCode_Workspace/Infomation_Manager/userdata.txt", "r");
 
-                
-            //     break;
+    // while ((ch = fgetc(userData)) != EOF)
+    // {
+    //     if (ch == '\n')
+    //     {
+    //         userCount++;
+    //     }
+    // }
+    // rewind(userData);
+    // user *users = malloc(userCount * sizeof(user));
+    // for (int i = 0; i < userCount; i++)
+    // {
+    //     fscanf(userData, "%s %s %d\n", users[i].username, users[i].password, &users[i].rooted);
+    // }
+    // fclose(userData);
 
-            // case ROOT:
+    // userData = fopen("E:/BaiduSyncdisk/03_CODE/VSCode_Workspace/Infomation_Manager/userdata.txt", "w");
+    // //* 先不做这个权限的更改了，目前来看权限是创建用户的时候就定好的
+    // // puts("Enter the key you want to update: (password or root)");
+    // // sgets(buffer, 10);
+    // // int target = 0;
+    // // if (!strcasecmp(buffer, "password"))
+    // // {
+    // //     target = PASSWORD;
+    // // }
+    // // else if (!strcasecmp(buffer, "root"))
+    // // {
+    // //     target = ROOT;
+    // // }
 
-            //     break;
+    // for (int i = 0; i < userCount; i++)
+    // {
+    //     if (!strcmp(users[i].username, inputUser->username))
+    //     {
+    //         // switch (target)
+    //         // {
+    //         // case PASSWORD:
 
-            // default:
-            //     break;
-            // }
+    //         //     break;
 
-            char password[20] = {0};
-            do
-            {
-                printf("Enter your original password: ");
-                sgets(password, 20);
-            } while (strcmp(password, inputUser->password));
+    //         // case ROOT:
 
-            printf("Enter new password: ");
-            sgets(password, 20);
-            char newPassword[20] = {0};
-            do
-            {
-                printf("Enter new password again: ");
-                sgets(newPassword, 20);
-            } while (strcmp(password, newPassword));
+    //         //     break;
 
-            strcpy(users[i].password, password);
-            puts("Change applied.");
-        }
-        fprintf(userData, "%s %s %d\n", users[i].username, users[i].password, users[i].rooted);
-    }
-    printf("Updated\n\n\n");
-    logger.print(INFO, "updated a user '%s'", inputUser->username);
-    fclose(userData);
+    //         // default:
+    //         //     break;
+    //         // }
+
+    //         char password[20] = {0};
+    //         do
+    //         {
+    //             printf("Enter your original password: ");
+    //             sgets(password, 20);
+    //         } while (strcmp(password, inputUser->password));
+
+    //         printf("Enter new password: ");
+    //         sgets(password, 20);
+    //         char newPassword[20] = {0};
+    //         do
+    //         {
+    //             printf("Enter new password again: ");
+    //             sgets(newPassword, 20);
+    //         } while (strcmp(password, newPassword));
+
+    //         strcpy(users[i].password, password);
+    //         puts("Change applied.");
+    //     }
+    //     fprintf(userData, "%s %s %d\n", users[i].username, users[i].password, users[i].rooted);
+    // }
+    // printf("Updated\n\n\n");
+    // logger.print(INFO, "updated a user '%s'", inputUser->username);
+    // fclose(userData);
     return;
 }
 
@@ -331,4 +475,34 @@ int matchedName(user *inputUser)
         }
     fclose(userData);
     return matched;
+}
+
+int welcomeUser(void *data, int columnCount, char *columnValue[], char* columnName[])
+{
+    typedef enum columns
+    {
+        USERNAME = 0,
+        PASSWORD,
+        AUTHORIZATION
+    } columns;
+    char welcome[64] = {0};
+    strcpy(welcome, (const char *)data);
+    strcat(welcome, columnValue[USERNAME]);
+    printf("%s\n", welcome);
+
+    LOGGED = 1;
+    ACCESSIBLE = columnValue[AUTHORIZATION] - 48;
+    logger.print(INFO, "%s logged in", columnValue[USERNAME]);
+    return 0;
+}
+
+static int databaseError(char *systemOpration, char *databaseOpration)
+{
+    if (databaseStatus != SQLITE_OK)
+    {
+        printf("%s: %s\n", databaseOpration, sqlite3_errmsg(parcelHub));
+        logger.print(ERROR, "%s but failed when %s: %s", systemOpration, databaseOpration, errorMessage);
+        return 1;
+    }
+    return 0;
 }

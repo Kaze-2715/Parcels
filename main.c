@@ -11,6 +11,7 @@ int Start = 0;
 user currentUser;
 log logger;
 sqlite3 *parcelHub = NULL;
+sqlite3_stmt *statement = NULL;
 char *errorMessage = NULL;
 int databaseStatus = SQLITE_OK;
 
@@ -205,7 +206,6 @@ void start()
     {
         return;
     }
-    
 
     do
     {
@@ -433,7 +433,7 @@ void userUpdate()
     return; 
 }
 
-int databaseError(char *systemOpration, char *databaseOpration)
+static int databaseError(char *systemOpration, char *databaseOpration)
 {
     if (databaseStatus != SQLITE_OK)
     {
