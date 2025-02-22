@@ -21,7 +21,7 @@ int chooseToContinue();
 void outputParcel(parcel *one);
 void outbound(char *ID);
 parcel inputParcel();
-parcel inbound();
+int inbound();
 
 //* main.c
 int help();

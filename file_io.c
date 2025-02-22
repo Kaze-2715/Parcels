@@ -1,10 +1,17 @@
 #include "defines.h"
 #include "user_io.h"
+#include "log.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <sqlite3.h>
 
+extern log logger;
+extern sqlite3 *parcelhub;
+extern sqlite3_stmt *statement;
+extern char *errorMessage;
+extern int databaseStatus;
 node *loadLinklist(FILE *fp);
 void freeLinklist(node *list);
 int matchedLine(node *buffer, char *ID);
@@ -68,46 +75,65 @@ void writeLine(parcel *one, FILE *parcelData)
 //*          Fixed the match line of head node;
 void deleteLine(char *ID)
 {
-    FILE *parcelData = openParcel("r");
-    node *list = loadLinklist(parcelData);
-    node *matched = NULL;
-    fclose(parcelData);
+    char delete[64] = "DELETE FROM PARCELS WHERE id = ?;";
 
-    for (node *cur = list, *before = NULL; cur != NULL; before = cur, cur = cur->next)
+    sqlite3_prepare_v2(parcelhub, delete, -1, &statement, NULL);
+    sqlite3_bind_text(statement, 1, ID, -1, SQLITE_STATIC);
+    databaseStatus = sqlite3_step(statement);
+
+    if (databaseStatus == SQLITE_DONE)
     {
-        if (matchedLine(cur, ID))
-        {
-            if (before == NULL)
-            {
-                list = cur->next;
-                matched = cur;
-            }
-            else
-            {
-                before->next = cur->next;
-                matched = cur;
-            }
-        }
+        printf("Deleted parcel: %s", ID);
+        logger.print(INFO, "deleted parcel: %s", ID);
+    }
+    else
+    {
+        printf("Failed to delete for database error: %s", sqlite3_errmsg(parcelhub));
+        logger.print(ERROR, "failed to delete for database error: %s", sqlite3_errmsg(parcelhub));
     }
 
-    if (matched != NULL)
-    {
-        free(matched);
-    }
+    return;
 
-    // TODO 接下来将删除好的链表写进新文件当中,然后将链表free掉
-    parcelData = openParcel("w+");
+    // FILE *parcelData = openParcel("r");
+    // node *list = loadLinklist(parcelData);
+    // node *matched = NULL;
+    // fclose(parcelData);
 
-    for (node *cur = list, *next = NULL; cur != NULL;)
-    {
-        next = cur->next;
-        writeLine(&(cur->data), parcelData);
-        free(cur);
-        cur = next;
-    }
+    // for (node *cur = list, *before = NULL; cur != NULL; before = cur, cur = cur->next)
+    // {
+    //     if (matchedLine(cur, ID))
+    //     {
+    //         if (before == NULL)
+    //         {
+    //             list = cur->next;
+    //             matched = cur;
+    //         }
+    //         else
+    //         {
+    //             before->next = cur->next;
+    //             matched = cur;
+    //         }
+    //     }
+    // }
 
-    // TODO 关闭文件
-    fclose(parcelData);
+    // if (matched != NULL)
+    // {
+    //     free(matched);
+    // }
+
+    // // TODO 接下来将删除好的链表写进新文件当中,然后将链表free掉
+    // parcelData = openParcel("w+");
+
+    // for (node *cur = list, *next = NULL; cur != NULL;)
+    // {
+    //     next = cur->next;
+    //     writeLine(&(cur->data), parcelData);
+    //     free(cur);
+    //     cur = next;
+    // }
+
+    // // TODO 关闭文件
+    // fclose(parcelData);
 }
 
 //* Fixed the ending condition of the 'while' loop;
@@ -145,68 +171,90 @@ int matchedLine(node *buffer, char *ID)
 
 void updateLine(char *ID)
 {
-    //* Open the file and load the linkist.
-    FILE *parcelData = openParcel("r");
-    node *list = loadLinklist(parcelData);
-    fclose(parcelData);
-    int matchCount = 0;
+    // //* Open the file and load the linkist.
+    // FILE *parcelData = openParcel("r");
+    // node *list = loadLinklist(parcelData);
+    // fclose(parcelData);
+    // int matchCount = 0;
 
-    //* Go through the linklist to match the target item.
-    for (node *cur = list, *before = NULL; cur != NULL; before = cur, cur = cur->next)
-    {
-        if (matchedLine(cur, ID))
-        {
-            printf("Matched!\n");
-            cur->data = inputParcel();
-            matchCount++;
-        }
-    }
-    //* Check if there is matched items, if not, tell the user.
-    if (matchCount == 0)
-    {
-        printf("Not matched! Check your input.\n");
-    }
+    // //* Go through the linklist to match the target item.
+    // for (node *cur = list, *before = NULL; cur != NULL; before = cur, cur = cur->next)
+    // {
+    //     if (matchedLine(cur, ID))
+    //     {
+    //         printf("Matched!\n");
+    //         cur->data = inputParcel();
+    //         matchCount++;
+    //     }
+    // }
+    // //* Check if there is matched items, if not, tell the user.
+    // if (matchCount == 0)
+    // {
+    //     printf("Not matched! Check your input.\n");
+    // }
 
-    //* Free the linklist.
-    parcelData = openParcel("w+");
+    // //* Free the linklist.
+    // parcelData = openParcel("w+");
 
-    for (node *cur = list, *next = NULL; cur != NULL;)
-    {
-        next = cur->next;
-        writeLine(&(cur->data), parcelData);
-        free(cur);
-        cur = next;
-    }
+    // for (node *cur = list, *next = NULL; cur != NULL;)
+    // {
+    //     next = cur->next;
+    //     writeLine(&(cur->data), parcelData);
+    //     free(cur);
+    //     cur = next;
+    // }
 
-    fclose(parcelData);
+    // fclose(parcelData);
 }
 
 void selectLine(char *ID)
 {
-    //* Open the file and load the linkist.
-    FILE *parcelData = openParcel("r");
-    node *list = loadLinklist(parcelData);
-    fclose(parcelData);
-    int matchCount = 0;
+    char *select = "SELECT * FROM PARCELS WHERE id = ?;";
+    sqlite3_prepare_v2(parcelhub, select, -1, &statement, NULL);
+    sqlite3_bind_text(statement, 1, ID, -1, SQLITE_STATIC);
+    databaseStatus = sqlite3_step(statement);
 
-    //* Go through the linklist to match the target item.
-    for (node *ptr = list; ptr != NULL; ptr = ptr->next)
+    if (databaseStatus == SQLITE_ROW)
     {
-        if (matchedLine(ptr, ID))
-        {
-            printf("Matched!\n");
-            outputParcel(&(ptr->data));
-            matchCount++;
-        }
+        printf("Found parcel: %s\n\n", ID);
+        logger.print(INFO, "query for parcel: %s", ID);
     }
-    //* Check if there is matched items, if not, tell the user.
-    if (matchCount == 0)
+    else if (databaseStatus == SQLITE_DONE)
     {
-        printf("Not matched! Check your input.\n");
+        printf("No such parcel: %s\n\n", ID);
+        logger.print(INFO, "query for parcel: %s which not exists", ID);
+    }
+    else
+    {
+        printf("Database error: %s", sqlite3_errmsg(parcelhub));
+        logger.print(ERROR, "met an database error: %s", sqlite3_errmsg(parcelhub));
     }
 
-    //* Free the linklist.
-    freeLinklist(list);
+    return;
+    // //* Open the file and load the linkist.
+    // FILE *parcelData = openParcel("r");
+    // node *list = loadLinklist(parcelData);
+    // fclose(parcelData);
+    // int matchCount = 0;
+
+    // //* Go through the linklist to match the target item.
+    // for (node *ptr = list; ptr != NULL; ptr = ptr->next)
+    // {
+    //     if (matchedLine(ptr, ID))
+    //     {
+    //         printf("Matched!\n");
+    //         outputParcel(&(ptr->data));
+    //         matchCount++;
+    //     }
+    // }
+    // //* Check if there is matched items, if not, tell the user.
+    // if (matchCount == 0)
+    // {
+    //     printf("Not matched! Check your input.\n");
+    // }
+
+    // //* Free the linklist.
+    // freeLinklist(list);
 }
 
 void freeLinklist(node *list)
@@ -225,46 +273,87 @@ void outbound(char *ID)
     time_t now;
     struct tm *currentTime;
 
-    //* Open the file and load the linkist.
-    FILE *parcelData = openParcel("r");
-    node *list = loadLinklist(parcelData);
-    fclose(parcelData);
-    int matchCount = 0;
+    char query[32] = "SELECT * FROM PARCELS WHERE id = ?;";
+    char update[32] = "UPDATE PARCELS SET outtime = ?;";
+    char timeStr[32] = {0};
 
-    //* Go through the linklist to match the target item.
-    for (node *cur = list, *before = NULL; cur != NULL; before = cur, cur = cur->next)
+    sqlite3_prepare_v2(parcelhub, query, -1, &statement, NULL);
+    sqlite3_bind_text(statement, 1, ID, -1, SQLITE_STATIC);
+    databaseStatus = sqlite3_step(statement);
+
+    if (databaseStatus == SQLITE_ROW)
     {
-        if (matchedLine(cur, ID))
+        now = time(NULL);
+        currentTime = localtime(&now);
+        snprintf(timeStr, 32, "%4d-%02d-%02d %02d:%02d:%02d", currentTime->tm_year + 1900, currentTime->tm_mon, currentTime->tm_mday, currentTime->tm_hour, currentTime->tm_min, currentTime->tm_sec);
+
+        sqlite3_prepare_v2(parcelhub, update, -1, &statement, NULL);
+        sqlite3_bind_text(statement, 1, timeStr, -1, SQLITE_STATIC);
+        sqlite3_step(statement);
+
+        if (sqlite3_changes(parcelhub) == 1)
         {
-            now = time(NULL);
-            currentTime = localtime(&now);
-            cur->data.state = OUTBOUND;
-            cur->data.unload_time.year = currentTime->tm_year + 1900;
-            cur->data.unload_time.month = currentTime->tm_mon;
-            cur->data.unload_time.day = currentTime->tm_mday;
-            cur->data.unload_time.hour = currentTime->tm_hour;
-            cur->data.unload_time.minute = currentTime->tm_min;
-            cur->data.unload_time.second = currentTime->tm_sec;
-            matchCount++;
-            printf("Outbounded!\n");
+            printf("Outbounded parcel: %s\n\n", ID);
+            logger.print(INFO, "outbounded parcel: %s", ID);
+        }
+        else
+        {
+            printf("Failed to outbounded for error: %s\n\n", sqlite3_errmsg(parcelhub));
+            logger.print(ERROR, "failed to outbounded a parcel for error: %s", sqlite3_errmsg(parcelhub));
         }
     }
-    //* Check if there is matched items, if not, tell the user.
-    if (matchCount == 0)
+    else if (databaseStatus == SQLITE_DONE)
     {
-        printf("Not matched! Check your input.\n");
+        printf("No such parcel: %s\n", ID);
+        printf("Check your input\n\n");
+    }
+    else
+    {
+        printf("Database error: %s\n\n", sqlite3_errmsg(parcelhub));
     }
 
-    //* Free the linklist.
-    parcelData = openParcel("w+");
+    return;
 
-    for (node *cur = list, *next = NULL; cur != NULL;)
-    {
-        next = cur->next;
-        writeLine(&(cur->data), parcelData);
-        free(cur);
-        cur = next;
-    }
+    // //* Open the file and load the linkist.
+    // FILE *parcelData = openParcel("r");
+    // node *list = loadLinklist(parcelData);
+    // fclose(parcelData);
+    // int matchCount = 0;
 
-    fclose(parcelData);
+    // //* Go through the linklist to match the target item.
+    // for (node *cur = list, *before = NULL; cur != NULL; before = cur, cur = cur->next)
+    // {
+    //     if (matchedLine(cur, ID))
+    //     {
+    //         now = time(NULL);
+    //         currentTime = localtime(&now);
+    //         cur->data.state = OUTBOUND;
+    //         cur->data.unload_time.year = currentTime->tm_year + 1900;
+    //         cur->data.unload_time.month = currentTime->tm_mon;
+    //         cur->data.unload_time.day = currentTime->tm_mday;
+    //         cur->data.unload_time.hour = currentTime->tm_hour;
+    //         cur->data.unload_time.minute = currentTime->tm_min;
+    //         cur->data.unload_time.second = currentTime->tm_sec;
+    //         matchCount++;
+    //         printf("Outbounded!\n");
+    //     }
+    // }
+    // //* Check if there is matched items, if not, tell the user.
+    // if (matchCount == 0)
+    // {
+    //     printf("Not matched! Check your input.\n");
+    // }
+
+    // //* Free the linklist.
+    // parcelData = openParcel("w+");
+
+    // for (node *cur = list, *next = NULL; cur != NULL;)
+    // {
+    //     next = cur->next;
+    //     writeLine(&(cur->data), parcelData);
+    //     free(cur);
+    //     cur = next;
+    // }
+
+    // fclose(parcelData);
 }

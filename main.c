@@ -126,29 +126,6 @@ int main(void)
 // @date 2024.12.14
 // @brief Print help info on the monitor.
 // -------------------------------------------------
-int help()
-{
-    printf("-login       : Login your account.\n");
-    printf("-logout      : Logout your account.\n");
-    printf("-start       : Start the system and load the data.\n");
-    printf("-stop        : Save all the data and exit the system.\n");
-    printf("-reload      : Reload the data file to the program.\n");
-    printf("-save        : Save the current data to the database file.\n");
-    printf("-halt        : Exit the program without any saving operations.\n");
-    printf("-inBound     : Add a parcel to the warehouse.\n");
-    printf("-outBound    : Outbound a parcel from the warehouse.\n");
-    printf("-delete      : Delete a parcel from warehouse(completely delete!).\n");
-    printf("-update      : Update the state of a parcel.\n");
-    printf("-select      : Select a specific parcel to read its information.\n");
-    printf("-dataFilter  : Select all the parcels which have the same identifications.\n");
-    printf("-dataSort    : Sort the data as you wish.\n");
-    printf("-dataVisual  : Visualize the data as you wish.\n");
-    printf("-userCreate  : Create a new user of the system.\n");
-    printf("-userDelete  : Delete a user.\n");
-    printf("-userUpdate  : Update the permission of a user.\n");
-
-    return 0;
-}
 
 void start()
 {
@@ -216,6 +193,7 @@ void halt()
 {
     logger.print(INFO, "stopped the system");
     logger.destroy();
+    sqlite3_finalize(statement);
     sqlite3_close(parcelHub);
     //printf("Halted\n\n");
 }
@@ -262,19 +240,15 @@ void dataVisual()
 void inBound()
 {
     parcel one;
-    char sql[256];
     //FILE *parcelData = openParcel("a+");
-
     do
     {
-        one = inbound();
-        
+        inbound();
         //writeLine(&one, parcelData);
-        logger.print(INFO, "inbounded a parcel: %s", one.ID);
-        printf("Add complete\n\n");
     } while (chooseToContinue());
 
     //fclose(parcelData);
+    return;
 }
 
 void outBound()
@@ -287,7 +261,6 @@ void outBound()
         getchar();
 
         outbound(ID);
-        logger.print(INFO, "outbounded a parcel: %s", ID);
     } while (chooseToContinue());
     
 }
@@ -407,5 +380,29 @@ static int databaseError(char *systemOpration, char *databaseOpration)
         logger.print(ERROR, "%s but failed when %s: %s",systemOpration, databaseOpration, errorMessage);
         return 1;
     }
+    return 0;
+}
+
+int help()
+{
+    printf("-login       : Login your account.\n");
+    printf("-logout      : Logout your account.\n");
+    printf("-start       : Start the system and load the data.\n");
+    printf("-stop        : Save all the data and exit the system.\n");
+    printf("-reload      : Reload the data file to the program.\n");
+    printf("-save        : Save the current data to the database file.\n");
+    printf("-halt        : Exit the program without any saving operations.\n");
+    printf("-inBound     : Add a parcel to the warehouse.\n");
+    printf("-outBound    : Outbound a parcel from the warehouse.\n");
+    printf("-delete      : Delete a parcel from warehouse(completely delete!).\n");
+    printf("-update      : Update the state of a parcel.\n");
+    printf("-select      : Select a specific parcel to read its information.\n");
+    printf("-dataFilter  : Select all the parcels which have the same identifications.\n");
+    printf("-dataSort    : Sort the data as you wish.\n");
+    printf("-dataVisual  : Visualize the data as you wish.\n");
+    printf("-userCreate  : Create a new user of the system.\n");
+    printf("-userDelete  : Delete a user.\n");
+    printf("-userUpdate  : Update the permission of a user.\n");
+
     return 0;
 }
