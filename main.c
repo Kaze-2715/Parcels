@@ -24,10 +24,6 @@ static int databaseError(char *systemOpration, char *databaseOpration);
 int main(void)
 {
     start();
-    
-    printf("Glad to see you! How's your day?\n\n");
-    printf("If needed, please enter '-help' for further instructions.\n");
-    printf("Don't forget to login first.\n");
 
     while(1)
     {
@@ -75,19 +71,6 @@ int main(void)
             logout();
             break;
 
-        // case STOP:
-        //     stop();
-        //     break;
-        //     return 0;
-        //
-        // case 5:
-        //     reload();
-        //     break;
-        //
-        // case 6:
-        //     save();
-        //     break;
-
         case HALT:
             halt();
             return 0;
@@ -100,10 +83,6 @@ int main(void)
         case DATA_SORT:
             dataSort();
             break;
-            
-        // case DATA_VISUALIZATION:
-        //     dataVisual();
-        //     break;
 
         case IN:
             inBound();
@@ -175,7 +154,7 @@ void start()
 {
     const char *sql = NULL;
     initLog();
-    sqlite3_open("parcelhub.db", &parcelHub);
+    databaseStatus = sqlite3_open("parcelhub.db", &parcelHub);
     if (databaseError("Starting system", "opening database"))
     {
         return;
@@ -214,6 +193,9 @@ void start()
     //printf("Started\n\n");
     logger.print(INFO, "%s", "started the system");
     Start = 1;
+
+    printf("If needed, please enter '-help' for further instructions.\n\n");
+
     return;
 }
 
@@ -229,22 +211,6 @@ void logout()
     currentUser.logout(&currentUser);
     return;
 }
-
-// void stop()
-// {
-//     printf("Stopped\n\n");
-//     return;
-// }
-
-// void reload()
-// {
-//     printf("Reloaded\n\n");
-// }
-
-// void save()
-// {
-//     printf("Saved\n\n");
-// }
 
 void halt()
 {
