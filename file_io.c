@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <time.h>
 #include <sqlite3.h>
 
@@ -12,9 +13,11 @@ extern sqlite3 *parcelhub;
 extern sqlite3_stmt *statement;
 extern char *errorMessage;
 extern int databaseStatus;
+
 node *loadLinklist(FILE *fp);
 void freeLinklist(node *list);
 int matchedLine(node *buffer, char *ID);
+static int getTime(char *userInput, char *timeStr);
 
 //* @brief To open the "parcels.txt"
 //! @attention Need the whole path to the file, which is not good for deploying in other computers.
@@ -171,6 +174,124 @@ int matchedLine(node *buffer, char *ID)
 
 void updateLine(char *ID)
 {
+    //* ---------变量区----------
+    char *query = "SELECT * FROM PARCELS WHERE id = ?;";
+    char setClause[256] = "UPDATE PARCELS SET ";
+    char *fields[6] = {"origin", "destination", "status", "intime", "outtime"};
+    char userInput[64] = "";
+    char newValue[5][64] = {0};
+    char *separation = ",";
+    char *token = NULL;
+
+    //* ------------------------
+
+    // TODO 验证字段
+
+    // TODO 获取时间输入
+
+    // TODO 查询ID，显示当前数据
+    sqlite3_prepare_v2(parcelhub, query, -1, statement, NULL);
+    sqlite3_bind_text(statement, 1, ID, -1, SQLITE_STATIC);
+    databaseStatus = sqlite3_step(statement);
+
+    if (databaseStatus == SQLITE_ROW)
+    {
+        printf("Is this exactly the parcel you want to update?\n");
+        printf("%s | %s | %s | %d | %s | %s\n",
+               sqlite3_column_text(statement, 0),
+               sqlite3_column_text(statement, 1),
+               sqlite3_column_text(statement, 2),
+               sqlite3_column_int(statement, 3),
+               sqlite3_column_text(statement, 4),
+               sqlite3_column_text(statement, 5));
+    }
+    else if (databaseStatus == SQLITE_DONE)
+    {
+        printf("No such parcel, check your input\n");
+        return;
+    }
+    
+    // TODO 收集更新信息，同时获取多个字段
+    int parameterCount = 0;
+    printf("Enter the field you want to update, separated by ',': ");
+    sgets(userInput, 64);
+    token = strtok(userInput, separation);
+    while (token)
+    {
+        //TODO 转小写
+        for (char* ptr = userInput; *ptr; ptr++)
+        {
+            *ptr = tolower(*ptr);
+        }
+        //TODO 判断合法性
+        if (!is_valid_fieldname(token))
+        {
+            printf("Invalid field name");
+            return;
+        }
+        
+        //TODO 字符串拼接字段值和 =? 号
+        if (parameterCount > 0)
+        {
+            strcat(setClause, ", ");
+        }
+        strcat(setClause, token);
+        strcat(setClause, "=?");
+
+        //TODO 收集参数值
+        if (!strcasecmp(token, "intime") || !strcasecmp(token, "outtime"))
+        {
+            char timeStr[32] = "";
+            printf("Enter the new %s: ", token);
+            sgets(timeStr, 64);
+            getTime(timeStr, newValue[parameterCount]);
+        }
+        else
+        {
+            printf("Enter the new value of %s: ", token);
+            sgets(newValue[parameterCount], 64);
+        }
+        token = strtok(NULL, separation);
+        parameterCount++;
+    }
+    // TODO 构建set子句
+    strcat(setClause, ";");
+    sqlite3_prepare_v2(parcelhub, setClause, -1, statement, NULL);
+    
+    for (int i = 0; i < parameterCount; i++)
+    {
+        if (strlen(newValue[i]) == 1)
+        {
+            int status = newValue[i][0] - 48;
+            sqlite3_bind_int(statement, i + 1, status);
+            continue;
+        }
+        else
+        {
+            sqlite3_bind_text(statement, i + 1, newValue[i], -1, SQLITE_STATIC);
+        }
+    }
+    
+    
+
+    // TODO 准备更新
+
+    // TODO 绑定参数
+
+    // TODO 执行更新
+    databaseStatus = sqlite3_step(statement);
+    if (databaseStatus != SQLITE_OK)
+    {
+        printf("Database error: %s\n", sqlite3_errmsg(parcelhub));
+        return;
+    }
+    else
+    {
+        printf("Update success\n");
+    }
+
+    return;
+
     // //* Open the file and load the linkist.
     // FILE *parcelData = openParcel("r");
     // node *list = loadLinklist(parcelData);
@@ -356,4 +477,42 @@ void outbound(char *ID)
     // }
 
     // fclose(parcelData);
+}
+
+int getTime(char *userInput, char *timeStr)
+{
+    char *time = strtok(userInput, "- .:");
+    int tokenCount = 0;
+    while (time)
+    {
+        char formatted[5] = "";
+        if (strlen(time) == 1)
+        {
+            sprintf(formatted, "0%s", time);
+        }
+        else
+        {
+            strcpy(formatted, time);
+        }
+        strcat(timeStr, formatted);
+        switch (tokenCount)
+        {
+        case 0:
+        case 1:
+            strcat(timeStr, "-");
+            break;
+        case 2:
+            strcat(timeStr, " ");
+            break;
+        case 3:
+        case 4:
+            strcat(timeStr, ":");
+            break;
+        default:
+            break;
+        }
+        time = strtok(NULL, "- .");
+        tokenCount++;
+    }
+    return 0;
 }
