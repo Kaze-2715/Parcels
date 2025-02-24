@@ -51,13 +51,6 @@ void updateLine(char *ID)
     char *separation = ",";
     char *token = NULL;
 
-    //* ------------------------
-
-    // TODO 验证字段
-
-    // TODO 获取时间输入
-
-    // TODO 查询ID，显示当前数据
     sqlite3_prepare_v2(parcelHub, query, -1, &statement, NULL);
     sqlite3_bind_text(statement, 1, ID, -1, SQLITE_STATIC);
     databaseStatus = sqlite3_step(statement);
@@ -78,15 +71,14 @@ void updateLine(char *ID)
         printf("No such parcel, check your input\n");
         return;
     }
-    
-    // TODO 收集更新信息，同时获取多个字段
+
     int parameterCount = 0;
     printf("Enter the field you want to update, separated by ',': ");
     sgets(userInput, 64);
     token = strtok(userInput, separation);
     while (token)
     {
-        //TODO 转小写
+
         for (char* ptr = token; *ptr; ptr++)
         {
             if (isspace(*ptr))
@@ -95,14 +87,14 @@ void updateLine(char *ID)
             }
             *ptr = tolower(*ptr);
         }
-        //TODO 判断合法性
+
         if (!is_valid_fieldname(token))
         {
             printf("Invalid field name");
             return;
         }
         
-        //TODO 字符串拼接字段值和 =? 号
+
         if (parameterCount > 0)
         {
             strcat(setClause, ", ");
@@ -110,7 +102,7 @@ void updateLine(char *ID)
         strcat(setClause, token);
         strcat(setClause, "=?");
 
-        //TODO 收集参数值
+
         if (!strcasecmp(token, "intime") || !strcasecmp(token, "outtime"))
         {
             char timeStr[32] = "";
@@ -126,7 +118,7 @@ void updateLine(char *ID)
         token = strtok(NULL, separation);
         parameterCount++;
     }
-    // TODO 构建set子句
+
     strcat(setClause, " WHERE id = ?;");
     sqlite3_prepare_v2(parcelHub, setClause, -1, &statement, NULL);
     
@@ -146,11 +138,11 @@ void updateLine(char *ID)
 
     sqlite3_bind_text(statement, parameterCount + 1, ID, -1, SQLITE_STATIC);
 
-    // TODO 准备更新
 
-    // TODO 绑定参数
 
-    // TODO 执行更新
+
+
+
     databaseStatus = sqlite3_step(statement);
     if (databaseStatus != SQLITE_DONE)
     {

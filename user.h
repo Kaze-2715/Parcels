@@ -16,23 +16,16 @@ struct user
 
 extern int LOGGED, ACCESSIBLE;
 
-// TODO login
 void userLogin(user *user);
-// TODO logout
+
 void userLogout(user *logout);
-// TODO getuser
+
 user getUser();
 
-// TODO create
 void createUser(user *user);
 
-// TODO delete
 void deleteUser(user *user);
 
-// TODO matchUser
-static int matched(user *user);
-
-// TODO updateUser
 void updateUser(user *user);
 
 #endif

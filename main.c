@@ -199,13 +199,12 @@ void dataFilter()
 {
     do
     {
-        // TODO 获取筛选字段，并获取用户输入
+
         char key[20] = {0};
         printf("Input your key: ");
         scanf("%s", key);
         getchar();
 
-        // TODO 设计一个函数，来匹配对应的字段的值，并输出结果，它的参数应该包含两部分：要匹配的字段，以及要匹配的值，以及可能的升序和降序排列
         filter(key);
 
     } while (chooseToContinue());
@@ -217,12 +216,12 @@ void dataSort()
 {
     do
     {
-        // TODO 获取排序关键字段，确定升序还是降序
+
         char key[20] = {0};
         printf("Input your key: ");
         scanf("%s", key);
         getchar();
-        // TODO 排序函数，参数应该包含两部分：字段，升序/降序
+
         sort(key);
 
     } while (chooseToContinue());
@@ -308,7 +307,7 @@ void select()
 
 void userCreate()
 {
-    // TODO 判断权限
+
     if (!LOGGED)
     {
         puts("Please login first!\n\n");
@@ -319,18 +318,14 @@ void userCreate()
         puts("You are not authorized.\n\n");
         return;
     }
-    
-    // TODO 获取用户输入，存储为一个变量
-    user newUser = getUser();
 
-    // TODO 将这个变量写入user.txt
+    user newUser = getUser();
     createUser(&newUser);
     return;
 }
 
 void userDelete()
 {
-    // TODO 判断权限
     if (!LOGGED)
     {
         puts("Please login first!\n\n");
@@ -342,17 +337,15 @@ void userDelete()
         return;
     }
 
-    // TODO 获取用户输入，存储为一个变量
     user toBeDeleted = getUser();
 
-    // TODO 这个使用计算行数来完成，先计算总行数，在逐行读入解析，将匹配的行标记，然后将字符数组重新写入
     deleteUser(&toBeDeleted);
     return;
 }
 
 void userUpdate()
 {
-    // TODO 判断权限
+
     if (!LOGGED)
     {
         puts("Please login first!\n\n");
