@@ -1,3 +1,6 @@
+// @author Kaze
+// @brief All the implementation of user related functions
+
 #include "user.h"
 #include "log.h"
 #include <stdio.h>
@@ -14,6 +17,10 @@ extern char *errorMessage;
 static int databaseError(char *systemOpration, char *databaseOpration);
 static char *sgets(char *buffer, int size);
 
+//----------------------------
+// @brief Get user info from input 
+// @param None
+// @retval a variable of struct user
 user getUser()
 {
     user inputUser;
@@ -32,6 +39,10 @@ user getUser()
     return inputUser;
 }
 
+//------------------------
+// @brief Let user login to the system
+// @param user a pointer to struct user
+// @retval None
 void userLogin(user *user)
 {
     sqlite3_stmt *statement = NULL;
@@ -62,6 +73,10 @@ void userLogin(user *user)
     return;
 }
 
+//-------------------------------
+// @brief To make user logout
+// @param user a pointer to struct user
+// @retval None
 void userLogout(user *user)
 {
     if (!LOGGED)
@@ -78,26 +93,9 @@ void userLogout(user *user)
     return;
 }
 
-static int matched(user *inputUser)
-{
-    int matched = 0;
-    FILE *userData = fopen("E:/BaiduSyncdisk/03_CODE/VSCode_Workspace/Infomation_Manager/userdata.txt", "r");
-    char buffer[40] = {0};
-    user readUser;
-    while (fgets(buffer, 40, userData) != NULL)
-    {
-        sscanf(buffer, "%s %s %d\n", readUser.username, readUser.password, &readUser.rooted);
-        if (!strcmp(readUser.username, inputUser->username) && !strcmp(readUser.password, inputUser->password))
-        {
-            inputUser->rooted = readUser.rooted;
-            matched = 1;
-        }
-        
-    }
-    fclose(userData);
-    return matched;
-}
-
+// @brief Create a new user and store it into database
+// @param user a pointer to struct user
+// @retval None
 void createUser(user *user)
 {
     int accessibility;
@@ -146,6 +144,9 @@ void createUser(user *user)
     return;
 }
 
+// @brief Delete a user from database
+// @param User a pointer to sturct user
+// @retval None
 void deleteUser(user *User)
 {
     int changed = -1;
@@ -171,6 +172,9 @@ void deleteUser(user *User)
     return;
 }
 
+// @brief Update a user's info in the database
+// @param inputUser a pointer to struct user
+// @retval None
 void updateUser(user *inputUser)
 {
     typedef enum keys
@@ -266,6 +270,10 @@ void updateUser(user *inputUser)
     return;
 }
 
+// @brief To get a string ended with '\0' safely
+// @param buffer a pointer of char to your buffer zone
+// @param size an int of the size of your buffer zone
+// @retval a char pointer to the buffer
 static char *sgets(char *buffer, int size)
 {
     if (buffer == NULL)
@@ -308,6 +316,11 @@ static char *sgets(char *buffer, int size)
     return buffer;
 }
 
+// @brief To identify if the system have database error
+// @param systemOpration a string to identify your system operation
+// @param databaseOpration a string to identify your database operation
+// @retval 1 database error
+// @retval 0 database ok
 static int databaseError(char *systemOpration, char *databaseOpration)
 {
     if (databaseStatus != SQLITE_OK)

@@ -17,10 +17,7 @@ int databaseStatus = SQLITE_OK;
 
 static int databaseError(char *systemOpration, char *databaseOpration);
 // ----------------------------------------
-// @author Kaze
-// @date 2024.12.14
 // @brief The main part of the program.
-// ----------------------------------------
 int main(void)
 {
     start();
