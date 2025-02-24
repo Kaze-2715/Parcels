@@ -35,6 +35,4 @@ static int matched(user *user);
 // TODO updateUser
 void updateUser(user *user);
 
-static char *sgets(char *buffer, int size);
-
 #endif

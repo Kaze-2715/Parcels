@@ -12,6 +12,7 @@ extern int databaseStatus;
 extern char *errorMessage;
 
 static int databaseError(char *systemOpration, char *databaseOpration);
+static char *sgets(char *buffer, int size);
 
 user getUser()
 {

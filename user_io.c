@@ -6,7 +6,7 @@
 #include "log.h"
 
 extern log logger;
-extern sqlite3 *parcelhub;
+extern sqlite3 *parcelHub;
 extern sqlite3_stmt *statement;
 extern char *errorMessage;
 extern int databaseStatus;
@@ -20,7 +20,7 @@ int inbound()
                         "(origin, destination, id, status, intime) VALUES "
                         "(?, ?, ?, ?, ?);";
     char timeStr[32] = {0};
-    sqlite3_prepare_v2(parcelhub, inbound, -1, &statement, NULL);
+    sqlite3_prepare_v2(parcelHub, inbound, -1, &statement, NULL);
     parcel one;
     time_t now;
     struct tm *currentTime;
@@ -42,25 +42,12 @@ int inbound()
 
     now = time(NULL);
     currentTime = localtime(&now);
-    // one.load_time.year = currentTime->tm_year + 1900;
-    // one.load_time.month = currentTime->tm_mon;
-    // one.load_time.day = currentTime->tm_mday;
-    // one.load_time.hour = currentTime->tm_hour;
-    // one.load_time.minute = currentTime->tm_min;
-    // one.load_time.second = currentTime->tm_sec;
-
-    // one.unload_time.year = 0;
-    // one.unload_time.month = 0;
-    // one.unload_time.day = 0;
-    // one.unload_time.hour = 0;
-    // one.unload_time.minute = 0;
-    // one.unload_time.second = 0;
     snprintf(timeStr, 32, "%4d-%02d-%02d %02d:%02d:%02d", currentTime->tm_year + 1900, currentTime->tm_mon, currentTime->tm_mday, currentTime->tm_hour, currentTime->tm_min, currentTime->tm_sec);
     sqlite3_bind_text(statement, 5, timeStr, -1, SQLITE_STATIC);
 
     sqlite3_step(statement);
 
-    if (sqlite3_changes(parcelhub) == 1)
+    if (sqlite3_changes(parcelHub) == 1)
     {
         printf("Inbound complete\n\n");
         logger.print(INFO, "inbounded a parcel: %s", one.ID);
@@ -73,7 +60,7 @@ int inbound()
         return 0;
     }
 
-    return ;
+    return 1;
 }
 
 parcel inputParcel()
