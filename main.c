@@ -16,8 +16,7 @@ char *errorMessage = NULL;
 int databaseStatus = SQLITE_OK;
 
 static int databaseError(char *systemOpration, char *databaseOpration);
-// ----------------------------------------
-// @brief The main part of the program.
+
 int main(void)
 {
     start();
@@ -117,12 +116,6 @@ int main(void)
         }
     }
 }
-
-// -------------------------------------------------
-// @author Kaze
-// @date 2024.12.14
-// @brief Print help info on the monitor.
-// -------------------------------------------------
 
 void start()
 {

@@ -1,6 +1,4 @@
-// #include "defines.h"
-#include "file_io.h"
-#include "user_io.h"
+#include "defines.h"
 #include "log.h"
 #include <stdio.h>
 #include <string.h>
@@ -8,13 +6,8 @@
 
 extern log logger;
 
-static int timeLaterThan(Time floor, Time cur);
-static int timeEarlierThan(Time ceil, Time cur);
 static int getOpCode(char *key);
-void sortFrom(node *list, int rule);
-void sortTo(node *list, int rule);
-void sortLoadTime(node *list, int rule);
-void sortUnloadTime(node *list, int rule);
+
 
 //* 这里面的一大堆sort函数其实非常适合封装成多态函数，有机会了一定要试试！
 //* 用一个函数表来加载那一大堆sort函数，在多态调用时传函数指针解决问题；

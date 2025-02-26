@@ -1,5 +1,4 @@
 #include "defines.h"
-#include "user_io.h"
 #include "log.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,36 +13,86 @@ extern sqlite3_stmt *statement;
 extern char *errorMessage;
 extern int databaseStatus;
 
-
 static int getTime(char *userInput, char *timeStr);
 static int is_valid_fieldname(const char *token);
 static char *sgets(char *buffer, int size);
+static int cmd2code(char command[]);
 
-void deleteLine(char *ID)
+int inbound()
 {
-    char delete[64] = "DELETE FROM PARCELS WHERE id = ?;";
+    char inbound[128] = "INSERT OR IGNORE INTO PARCELS "
+                        "(origin, destination, id, status, intime) VALUES "
+                        "(?, ?, ?, ?, ?);";
+    char timeStr[32] = {0};
+    sqlite3_prepare_v2(parcelHub, inbound, -1, &statement, NULL);
+    parcel one;
+    time_t now;
+    struct tm *currentTime;
 
-    sqlite3_prepare_v2(parcelHub, delete, -1, &statement, NULL);
-    sqlite3_bind_text(statement, 1, ID, -1, SQLITE_STATIC);
-    databaseStatus = sqlite3_step(statement);
+    printf("Input the parcel infomation below\nFrom: ");
+    scanf("%9s", one.from);
+    getchar();
+    sqlite3_bind_text(statement, 1, one.from, -1, SQLITE_STATIC);
+    printf("To: ");
+    scanf("%9s", one.to);
+    getchar();
+    sqlite3_bind_text(statement, 2, one.to, -1, SQLITE_STATIC);
+    printf("ID: ");
+    scanf("%19s", one.ID);
+    getchar();
+    sqlite3_bind_text(statement, 3, one.ID, -1, SQLITE_STATIC);
 
-    if (databaseStatus == SQLITE_DONE)
+    sqlite3_bind_int(statement, 4, INBOUND);
+
+    now = time(NULL);
+    currentTime = localtime(&now);
+    snprintf(timeStr, 32, "%4d-%02d-%02d %02d:%02d:%02d", currentTime->tm_year + 1900, currentTime->tm_mon, currentTime->tm_mday, currentTime->tm_hour, currentTime->tm_min, currentTime->tm_sec);
+    sqlite3_bind_text(statement, 5, timeStr, -1, SQLITE_STATIC);
+
+    sqlite3_step(statement);
+
+    if (sqlite3_changes(parcelHub) == 1)
     {
-        printf("Deleted parcel: %s", ID);
-        logger.print(INFO, "deleted parcel: %s", ID);
+        printf("Inbound complete\n\n");
+        logger.print(INFO, "inbounded a parcel: %s", one.ID);
+        return 1;
     }
     else
     {
-        printf("Failed to delete for database error: %s", sqlite3_errmsg(parcelHub));
-        logger.print(ERROR, "failed to delete for database error: %s", sqlite3_errmsg(parcelHub));
+        printf("Inbound error\n\n");
+        logger.print(ERROR, "failed to inbound a parcel: %s exists", one.ID);
+        return 0;
     }
 
-    return;
+    return 1;
+}
+
+int chooseToContinue()
+{
+    char choose;
+    printf("End or not? (y/n) ");
+    scanf("%c", &choose);
+    char ch = getchar();
+    if ((choose == 'y') || (choose == 'Y'))
+    {
+        return 0;
+    }
+    else
+    {
+        if ((choose == 'n') || (choose == 'N'))
+        {
+            return 1;
+        }
+        else
+        {
+            printf("Check your input!\n");
+            return 0;
+        }
+    }
 }
 
 void updateLine(char *ID)
 {
-    //* ---------±äÁ¿Çø----------
     char *query = "SELECT * FROM PARCELS WHERE id = ?;";
     char setClause[256] = "UPDATE PARCELS SET ";
     char userInput[64] = "";
@@ -79,7 +128,7 @@ void updateLine(char *ID)
     while (token)
     {
 
-        for (char* ptr = token; *ptr; ptr++)
+        for (char *ptr = token; *ptr; ptr++)
         {
             if (isspace(*ptr))
             {
@@ -93,7 +142,6 @@ void updateLine(char *ID)
             printf("Invalid field name");
             return;
         }
-        
 
         if (parameterCount > 0)
         {
@@ -101,7 +149,6 @@ void updateLine(char *ID)
         }
         strcat(setClause, token);
         strcat(setClause, "=?");
-
 
         if (!strcasecmp(token, "intime") || !strcasecmp(token, "outtime"))
         {
@@ -121,7 +168,7 @@ void updateLine(char *ID)
 
     strcat(setClause, " WHERE id = ?;");
     sqlite3_prepare_v2(parcelHub, setClause, -1, &statement, NULL);
-    
+
     for (int i = 0; i < parameterCount; i++)
     {
         if (strlen(newValue[i]) == 1)
@@ -137,11 +184,6 @@ void updateLine(char *ID)
     }
 
     sqlite3_bind_text(statement, parameterCount + 1, ID, -1, SQLITE_STATIC);
-
-
-
-
-
 
     databaseStatus = sqlite3_step(statement);
     if (databaseStatus != SQLITE_DONE)
@@ -280,7 +322,6 @@ int is_valid_fieldname(const char *token)
         {
             flag = 1;
         }
-        
     }
 
     return flag;
@@ -326,4 +367,149 @@ static char *sgets(char *buffer, int size)
     }
 
     return buffer;
+}
+
+// @brief Switch the command text to command code
+int cmd2code(char command[])
+{
+    cmd cmd_code = -1;
+
+    if (!strcasecmp(command, "-help\n"))
+    {
+        cmd_code = HELP;
+        return cmd_code;
+    }
+    if (!strcasecmp(command, "-inbound\n"))
+    {
+        cmd_code = IN;
+        return cmd_code;
+    }
+    if (!strcasecmp(command, "-outbound\n"))
+    {
+        cmd_code = OUT;
+        return cmd_code;
+    }
+    if (!strcasecmp(command, "-delete\n"))
+    {
+        cmd_code = DELETE;
+        return cmd_code;
+    }
+    if (!strcasecmp(command, "-update\n"))
+    {
+        cmd_code = UPDATE;
+        return cmd_code;
+    }
+    if (!strcasecmp(command, "-select\n"))
+    {
+        cmd_code = SELECT;
+        return cmd_code;
+    }
+    if (!strcasecmp(command, "-dataFilter\n"))
+    {
+        cmd_code = DATA_FILTER;
+        return cmd_code;
+    }
+    if (!strcasecmp(command, "-dataSort\n"))
+    {
+        cmd_code = DATA_SORT;
+        return cmd_code;
+    }
+    if (!strcasecmp(command, "-dataVisual\n"))
+    {
+        cmd_code = DATA_VISUALIZATION;
+        return cmd_code;
+    }
+    if (!strcasecmp(command, "-login\n"))
+    {
+        cmd_code = LOGIN;
+        return cmd_code;
+    }
+    if (!strcasecmp(command, "-logout\n"))
+    {
+        cmd_code = LOGOUT;
+        return cmd_code;
+    }
+    if (!strcasecmp(command, "-start\n"))
+    {
+        cmd_code = START;
+        return cmd_code;
+    }
+    if (!strcasecmp(command, "-stop\n"))
+    {
+        cmd_code = STOP;
+        return cmd_code;
+    }
+    if (!strcasecmp(command, "-reload\n"))
+    {
+        cmd_code = RELOAD;
+        return cmd_code;
+    }
+    if (!strcasecmp(command, "-save\n"))
+    {
+        cmd_code = SAVE;
+        return cmd_code;
+    }
+    if (!strcasecmp(command, "-halt\n"))
+    {
+        cmd_code = HALT;
+        return cmd_code;
+    }
+    if (!strcasecmp(command, "-userCreate\n"))
+    {
+        cmd_code = USER_CREATE;
+        return cmd_code;
+    }
+    if (!strcasecmp(command, "-userDelete\n"))
+    {
+        cmd_code = USER_DELETE;
+        return cmd_code;
+    }
+    if (!strcasecmp(command, "-userUpdate\n"))
+    {
+        cmd_code = USER_UPDATE;
+        return cmd_code;
+    }
+    if (!strcasecmp(command, "-lockAccount\n"))
+    {
+        cmd_code = LOCK_ACCOUNT;
+        return cmd_code;
+    }
+    if (!strcasecmp(command, "-unlockAccount\n"))
+    {
+        cmd_code = UNLOCK_ACCOUNT;
+        return cmd_code;
+    }
+
+    return cmd_code;
+}
+
+// @brief To get the user input command text and switch it to the code.
+int getCommand()
+{
+    char command[15] = {0};
+    fgets(command, 14, stdin);
+    int code = cmd2code(command);
+    return code;
+}
+
+void deleteLine(char *ID)
+{
+    char delete[64] = "DELETE FROM PARCELS WHERE id = ?;";
+
+    sqlite3_prepare_v2(parcelHub, delete, -1, &statement, NULL);
+    sqlite3_bind_text(statement, 1, ID, -1, SQLITE_STATIC);
+    databaseStatus = sqlite3_step(statement);
+
+    if (databaseStatus == SQLITE_DONE)
+    {
+        printf("Deleted parcel: %s", ID);
+        logger.print(INFO, "deleted parcel: %s", ID);
+    }
+    else
+    {
+        printf("Failed to delete for database error: %s", sqlite3_errmsg(parcelHub));
+        logger.print(ERROR, "failed to delete for database error: %s", sqlite3_errmsg(parcelHub));
+    }
+
+    return;
 }
