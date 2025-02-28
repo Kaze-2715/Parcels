@@ -18,39 +18,32 @@ typedef struct Parcel
     Time load_time;
 } parcel;
 
-typedef struct node
-{
-    parcel data;
-    struct node *next;
-} node;
-
 typedef enum STATUS
 {
-    INBOUND = 0,
-    OUTBOUND
+    IN = 0,
+    OUT
 } STATUS;
 
 typedef enum Command
 {
     HELP = 0,
-    START,
     LOGIN,
     LOGOUT,
-    STOP,
-    RELOAD,
-    SAVE,
     HALT,
     DATA_FILTER,
     DATA_SORT,
-    DATA_VISUALIZATION, //* If the code is less than 10, it will need permission.
-    IN,
-    OUT,
+    SELECT, //* If the code is greater than SELECT, it will need permission.
+    INBOUND,
+    OUTBOUND,
     DELETE,
     UPDATE,
-    SELECT, //* If the code is between 4 and 14, it will need to start the system.
     USER_CREATE,
     USER_DELETE,
-    USER_UPDATE,
-    LOCK_ACCOUNT,
-    UNLOCK_ACCOUNT,
+    USER_UPDATE
 } cmd;
+
+typedef struct
+    {
+        const char *command;
+        cmd code;
+    } CommandMapping;

@@ -2,7 +2,7 @@
 #define DECLARATIONS_H
 
 //* main.c
-int help();
+void help();
 void start();
 void login();
 void logout();
@@ -20,8 +20,8 @@ void userDelete();
 void userUpdate();
 
 //* data.c
-void filter(char *key);
-void sort(char *key);
+void filter();
+void sort();
 
 //* parcelOprations.c
 int chooseToContinue();

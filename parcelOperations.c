@@ -13,9 +13,9 @@ extern sqlite3_stmt *statement;
 extern char *errorMessage;
 extern int databaseStatus;
 
-static int getTime(char *userInput, char *timeStr);
-static int is_valid_fieldname(const char *token);
-static char *sgets(char *buffer, int size);
+int getTime(char *userInput, char *timeStr);
+int is_valid_fieldname(const char *token);
+char *sgets(char *buffer, int size);
 static int cmd2code(char command[]);
 
 int inbound()
@@ -42,7 +42,7 @@ int inbound()
     getchar();
     sqlite3_bind_text(statement, 3, one.ID, -1, SQLITE_STATIC);
 
-    sqlite3_bind_int(statement, 4, INBOUND);
+    sqlite3_bind_int(statement, 4, IN);
 
     now = time(NULL);
     currentTime = localtime(&now);
@@ -65,30 +65,6 @@ int inbound()
     }
 
     return 1;
-}
-
-int chooseToContinue()
-{
-    char choose;
-    printf("End or not? (y/n) ");
-    scanf("%c", &choose);
-    char ch = getchar();
-    if ((choose == 'y') || (choose == 'Y'))
-    {
-        return 0;
-    }
-    else
-    {
-        if ((choose == 'n') || (choose == 'N'))
-        {
-            return 1;
-        }
-        else
-        {
-            printf("Check your input!\n");
-            return 0;
-        }
-    }
 }
 
 void updateLine(char *ID)
@@ -231,7 +207,7 @@ void outbound(char *ID)
     struct tm *currentTime;
 
     char query[64] = "SELECT * FROM PARCELS WHERE id = ?;";
-    char update[64] = "UPDATE PARCELS SET outtime = ? WHERE id = ?;";
+    char update[64] = "UPDATE PARCELS SET outtime = ? , status = 1 WHERE id = ?;";
     char timeStr[32] = {0};
 
     sqlite3_prepare_v2(parcelHub, query, -1, &statement, NULL);
@@ -327,7 +303,7 @@ int is_valid_fieldname(const char *token)
     return flag;
 }
 
-static char *sgets(char *buffer, int size)
+char *sgets(char *buffer, int size)
 {
     if (buffer == NULL)
     {
@@ -372,114 +348,32 @@ static char *sgets(char *buffer, int size)
 // @brief Switch the command text to command code
 int cmd2code(char command[])
 {
+    CommandMapping commandTable[] = {
+        {"-help\n", HELP},
+        {"-inbound\n", INBOUND},
+        {"-outbound\n", OUTBOUND},
+        {"-delete\n", DELETE},
+        {"-update\n", UPDATE},
+        {"-select\n", SELECT},
+        {"-dataFilter\n", DATA_FILTER},
+        {"-dataSort\n", DATA_SORT},
+        {"-login\n", LOGIN},
+        {"-logout\n", LOGOUT},
+        {"-halt\n", HALT},
+        {"-userCreate\n", USER_CREATE},
+        {"-userDelete\n", USER_DELETE},
+        {"-userUpdate\n", USER_UPDATE}};
+
     cmd cmd_code = -1;
 
-    if (!strcasecmp(command, "-help\n"))
+    for (int i = 0; i < sizeof(commandTable) / sizeof(CommandMapping); i++)
     {
-        cmd_code = HELP;
-        return cmd_code;
+        if (strcasecmp(command, commandTable[i].command) == 0)
+        {
+            cmd_code = commandTable[i].code;
+            break;
+        }
     }
-    if (!strcasecmp(command, "-inbound\n"))
-    {
-        cmd_code = IN;
-        return cmd_code;
-    }
-    if (!strcasecmp(command, "-outbound\n"))
-    {
-        cmd_code = OUT;
-        return cmd_code;
-    }
-    if (!strcasecmp(command, "-delete\n"))
-    {
-        cmd_code = DELETE;
-        return cmd_code;
-    }
-    if (!strcasecmp(command, "-update\n"))
-    {
-        cmd_code = UPDATE;
-        return cmd_code;
-    }
-    if (!strcasecmp(command, "-select\n"))
-    {
-        cmd_code = SELECT;
-        return cmd_code;
-    }
-    if (!strcasecmp(command, "-dataFilter\n"))
-    {
-        cmd_code = DATA_FILTER;
-        return cmd_code;
-    }
-    if (!strcasecmp(command, "-dataSort\n"))
-    {
-        cmd_code = DATA_SORT;
-        return cmd_code;
-    }
-    if (!strcasecmp(command, "-dataVisual\n"))
-    {
-        cmd_code = DATA_VISUALIZATION;
-        return cmd_code;
-    }
-    if (!strcasecmp(command, "-login\n"))
-    {
-        cmd_code = LOGIN;
-        return cmd_code;
-    }
-    if (!strcasecmp(command, "-logout\n"))
-    {
-        cmd_code = LOGOUT;
-        return cmd_code;
-    }
-    if (!strcasecmp(command, "-start\n"))
-    {
-        cmd_code = START;
-        return cmd_code;
-    }
-    if (!strcasecmp(command, "-stop\n"))
-    {
-        cmd_code = STOP;
-        return cmd_code;
-    }
-    if (!strcasecmp(command, "-reload\n"))
-    {
-        cmd_code = RELOAD;
-        return cmd_code;
-    }
-    if (!strcasecmp(command, "-save\n"))
-    {
-        cmd_code = SAVE;
-        return cmd_code;
-    }
-    if (!strcasecmp(command, "-halt\n"))
-    {
-        cmd_code = HALT;
-        return cmd_code;
-    }
-    if (!strcasecmp(command, "-userCreate\n"))
-    {
-        cmd_code = USER_CREATE;
-        return cmd_code;
-    }
-    if (!strcasecmp(command, "-userDelete\n"))
-    {
-        cmd_code = USER_DELETE;
-        return cmd_code;
-    }
-    if (!strcasecmp(command, "-userUpdate\n"))
-    {
-        cmd_code = USER_UPDATE;
-        return cmd_code;
-    }
-    if (!strcasecmp(command, "-lockAccount\n"))
-    {
-        cmd_code = LOCK_ACCOUNT;
-        return cmd_code;
-    }
-    if (!strcasecmp(command, "-unlockAccount\n"))
-    {
-        cmd_code = UNLOCK_ACCOUNT;
-        return cmd_code;
-    }
-
     return cmd_code;
 }
 
@@ -512,4 +406,28 @@ void deleteLine(char *ID)
     }
 
     return;
+}
+
+int chooseToContinue()
+{
+    char choose;
+    printf("End or not? (y/n) ");
+    scanf("%c", &choose);
+    char ch = getchar();
+    if ((choose == 'y') || (choose == 'Y'))
+    {
+        return 0;
+    }
+    else
+    {
+        if ((choose == 'n') || (choose == 'N'))
+        {
+            return 1;
+        }
+        else
+        {
+            printf("Check your input!\n");
+            return 0;
+        }
+    }
 }

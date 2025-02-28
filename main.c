@@ -19,6 +19,8 @@ static int databaseError(char *systemOpration, char *databaseOpration);
 
 int main(void)
 {
+    void (*exec[])() = {help, login, logout, halt, dataFilter, dataSort, select, inBound, outBound, delete, update, userCreate, userDelete, userUpdate};
+
     start();
 
     while(1)
@@ -34,86 +36,17 @@ int main(void)
             printf("Command error: No such command.\n");
             continue;
         }
-        if (code <= 10)   //* To check whether the command needs a permission.
+        if (code > SELECT)   //* To check whether the command needs a permission.
         {
             needPermission = 0;
-        }
-        if ((!LOGGED) && needPermission) //* To check whether the user logged in his account.
-        {
-            printf("Please login first!\n");
-            continue;
         }
         if ((!ACCESSIBLE) && needPermission) //* To check whether the user has the permission to access.
         {
             printf("You are not accessible! Please acquire permissions.\n");
             continue;
         }
-
-        switch (code)
-        {
-        case HELP:
-            help();
-            break;
-
-        case START:
-            start();
-            break;
-
-        case LOGIN:
-            login();
-            break;
-
-        case LOGOUT:
-            logout();
-            break;
-
-        case HALT:
-            halt();
-            return 0;
-            break;
-
-        case DATA_FILTER:
-            dataFilter();
-            break;
-
-        case DATA_SORT:
-            dataSort();
-            break;
-
-        case IN:
-            inBound();
-            break;
-
-        case OUT:
-            outBound();
-            break;
-
-        case DELETE:
-            delete();
-            break;
-
-        case UPDATE:
-            update();
-            break;
-
-        case SELECT:
-            select();
-            break;
-
-        case USER_CREATE:
-            userCreate();
-            break;
-
-        case USER_DELETE:
-            userDelete();
-            break;
-
-        case USER_UPDATE:
-            userUpdate();
-            break;
-        default:
-            break;
-        }
+// TODO 使用函数指针，做一个表驱动
+        exec[code]();
     }
 }
 
@@ -157,7 +90,6 @@ void start()
     {
         login();
     } while (!LOGGED);
-    //printf("Started\n\n");
     logger.print(INFO, "%s", "started the system");
     Start = 1;
 
@@ -183,40 +115,23 @@ void halt()
 {
     logger.print(INFO, "stopped the system");
     logger.destroy();
-    sqlite3_finalize(statement);
+    //sqlite3_finalize(statement);
     sqlite3_close(parcelHub);
-    //printf("Halted\n\n");
 }
 
 void dataFilter()
 {
     do
     {
-
-        char key[20] = {0};
-        printf("Input your key: ");
-        scanf("%s", key);
-        getchar();
-
-        filter(key);
-
+        filter();
     } while (chooseToContinue());
-    
-    //printf("Filtered\n\n");
 }
 
 void dataSort()
 {
     do
     {
-
-        char key[20] = {0};
-        printf("Input your key: ");
-        scanf("%s", key);
-        getchar();
-
-        sort(key);
-
+        sort();
     } while (chooseToContinue());
 }
 
@@ -229,14 +144,11 @@ void dataVisual()
 void inBound()
 {
     parcel one;
-    //FILE *parcelData = openParcel("a+");
     do
     {
         inbound();
-        //writeLine(&one, parcelData);
     } while (chooseToContinue());
 
-    //fclose(parcelData);
     return;
 }
 
@@ -366,7 +278,7 @@ static int databaseError(char *systemOpration, char *databaseOpration)
     return 0;
 }
 
-int help()
+void help()
 {
     printf("-login       : Login your account.\n");
     printf("-logout      : Logout your account.\n");
@@ -386,6 +298,5 @@ int help()
     printf("-userCreate  : Create a new user of the system.\n");
     printf("-userDelete  : Delete a user.\n");
     printf("-userUpdate  : Update the permission of a user.\n");
-
-    return 0;
+    return;
 }
